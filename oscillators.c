@@ -29,4 +29,3 @@ h_wave_square(h_oscillator_t *osc, const h_context_t *ctx, float freq)
   if (osc->phase > 1.0f) osc->phase -= 1.0f;
   return phase;
 }
-
