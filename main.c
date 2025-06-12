@@ -32,20 +32,32 @@ int
 main()
 {
   h_context_t ctx;
-  h_oscillator_t osc;
-  float *buf;
+  h_oscillator_t sine, square;
+  float *buf, notes[4], duration = 3, c2, bass_pitch, phase;
 
   ctx.sample = 0;
   ctx.sr = 41000;
 
-  osc.phase = 0.0f;
+  sine.phase = 0.0f;
+  square.phase = M_PI * 10;
 
-  buf = malloc(sizeof(float) * ctx.sr * 10);
-  for (ctx.sample = 0; ctx.sample < ctx.sr * 10; ctx.sample++) {
-    buf[ctx.sample] = h_wave_sine(&osc, &ctx, 440);
+  notes[0] = h_freq_from_midi(h_midi_from_note("C4"));
+  notes[1] = h_freq_from_midi(h_midi_from_note("E4"));
+  notes[2] = h_freq_from_midi(h_midi_from_note("G4"));
+  notes[3] = h_freq_from_midi(h_midi_from_note("B4"));
+
+  c2 = h_freq_from_midi(h_midi_from_note("C2"));
+  bass_pitch = 3 * c2;
+
+  buf = malloc(sizeof(float) * ctx.sr * duration);
+  for (ctx.sample = 0; ctx.sample < ctx.sr * duration; ctx.sample++) {
+    phase = h_wave_sine(&sine, &ctx, notes[(int) floorf(ctx.sample / ctx.sr / duration * 4)]);
+    buf[ctx.sample] = (phase < 0.0f ? 0.0f : phase) * 0.4 + h_wave_square(&square, &ctx, bass_pitch) * 0.3;
+    bass_pitch -= ctx.sample * 12 / ctx.sr;
+    if (bass_pitch < c2) bass_pitch = c2;
   }
 
-  h_save_wav32("out.wav", ctx.sr, ctx.sr * 10, buf);
+  h_save_wav32("out.wav", ctx.sr, ctx.sr * duration, buf);
 
   free(buf);
   return 0;
