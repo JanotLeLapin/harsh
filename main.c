@@ -39,11 +39,10 @@ main()
   ctx.sr = 41000;
 
   osc.phase = 0.0f;
-  osc.freq = 440;
 
   buf = malloc(sizeof(float) * ctx.sr * 10);
   for (ctx.sample = 0; ctx.sample < ctx.sr * 10; ctx.sample++) {
-    buf[ctx.sample] = h_wave_sine(&osc, &ctx);
+    buf[ctx.sample] = h_wave_sine(&osc, &ctx, 440);
   }
 
   h_save_wav32("out.wav", ctx.sr, ctx.sr * 10, buf);
