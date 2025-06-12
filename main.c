@@ -21,6 +21,15 @@ h_wave_sine(h_oscillator_t *osc, const h_context_t *ctx)
   return phase;
 }
 
+float
+h_wave_square(h_oscillator_t *osc, const h_context_t *ctx)
+{
+  float phase = osc->phase < 0.5 ? 1.0f : -1.0f;
+  osc->phase += osc->freq / ctx->sr;
+  if (osc->phase > 1.0f) osc->phase -= 1.0f;
+  return phase;
+}
+
 int
 h_save_wav32(const char *filename, uint32_t sample_rate, size_t sample_count, const float *samples)
 {
