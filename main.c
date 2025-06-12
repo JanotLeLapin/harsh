@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 typedef struct {
+  unsigned long sample;
   float sr;
 } h_context_t;
 
@@ -59,16 +60,16 @@ main()
   h_context_t ctx;
   h_oscillator_t osc;
   float *buf;
-  size_t i;
 
+  ctx.sample = 0;
   ctx.sr = 41000;
 
   osc.phase = 0.0f;
   osc.freq = 440;
 
   buf = malloc(sizeof(float) * ctx.sr * 10);
-  for (i = 0; i < ctx.sr * 10; i++) {
-    buf[i] = h_wave_sine(&osc, &ctx);
+  for (ctx.sample = 0; ctx.sample < ctx.sr * 10; ctx.sample++) {
+    buf[ctx.sample] = h_wave_sine(&osc, &ctx);
   }
 
   h_save_wav32("out.wav", ctx.sr, ctx.sr * 10, buf);
