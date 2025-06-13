@@ -2,7 +2,7 @@ CC = gcc
 LDFLAGS = -lm -lsndfile
 CFLAGS = -Wall -Wextra -O3
 
-SRCS = main.c oscillators.c
+SRCS = main.c oscillators.c processors.c
 OBJS = $(SRCS:.c=.o)
 
 TARGET = harsh
