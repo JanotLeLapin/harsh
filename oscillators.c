@@ -29,3 +29,12 @@ h_wave_square(float *p, const h_oscillator_t *osc, const h_context_t *ctx)
   if (*p > 1.0f) *p -= 1.0f;
   return phase;
 }
+
+float
+h_wave_sawtooth(float *p, const h_oscillator_t *osc, const h_context_t *ctx)
+{
+  float phase = (*p + osc->mod);
+  *p += osc->freq / ctx->sr * 2;
+  if (*p > 1.0f) *p -= 2.0f;
+  return phase;
+}
