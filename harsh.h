@@ -3,21 +3,26 @@
 
 #include <math.h>
 
+#define H_OSC_INIT(in_freq, in_mod, in_detune) { .out[0] = 0.0f, .out[1] = 0.0f, .phase[0] = 0.0f, .phase[1] = 0.0f, .freq = in_freq, .mod = in_mod, .detune = in_detune }
+
+#define H_BITCRUSH_INIT(in_target_freq, in_bits) { .out[0] = 0.0f, .out[1] = 0.0f, .current_freq = 0.0f, .target_freq = in_target_freq, .bits = in_bits };
+
 typedef struct {
   unsigned long sample;
   float sr;
 } h_context_t;
 
 typedef struct {
-  float phase;
+  float out[2];
+  float phase[2];
 
   float freq;
   float mod;
+  float detune;
 } h_oscillator_t;
 
 typedef struct {
-  float phase;
-  float latest_phase;
+  float out[2];
   float current_freq;
 
   float target_freq;
@@ -63,11 +68,11 @@ h_midi_from_note(const char *note)
 
 /* oscillators */
 float h_wave_noise();
-float h_wave_sine(h_oscillator_t *osc, const h_context_t *ctx);
-float h_wave_square(h_oscillator_t *osc, const h_context_t *ctx);
-float h_wave_sawtooth(h_oscillator_t *osc, const h_context_t *ctx);
+void h_wave_sine(h_oscillator_t *osc, const h_context_t *ctx);
+void h_wave_square(h_oscillator_t *osc, const h_context_t *ctx);
+void h_wave_sawtooth(h_oscillator_t *osc, const h_context_t *ctx);
 
 /* processors */
-float h_proc_bitcrush(h_proc_bitcrush_t *proc, const h_context_t *ctx, float input);
+void h_proc_bitcrush(h_proc_bitcrush_t *proc, const h_context_t *ctx, float input[2]);
 
 #endif
