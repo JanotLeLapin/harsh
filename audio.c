@@ -57,6 +57,12 @@ h_audio(h_audio_t *audio, const h_context_t *ctx)
     return;
   }
 
+  if (audio->current_sample >= audio->sample_count * 0.5) {
+    audio->out[0] = 0.0f;
+    audio->out[1] = 0.0f;
+    return;
+  }
+
   audio->current_freq -= ctx->sr;
   audio->out[0] = audio->samples[audio->current_sample * 2];
   audio->out[1] = audio->samples[audio->current_sample * 2 + 1];
