@@ -6,6 +6,7 @@
 #define H_OSC_INIT(in_freq, in_mod, in_detune) { .out[0] = 0.0f, .out[1] = 0.0f, .phase[0] = 0.0f, .phase[1] = 0.0f, .freq = in_freq, .mod = in_mod, .detune = in_detune }
 
 #define H_BITCRUSH_INIT(in_target_freq, in_bits) { .out[0] = 0.0f, .out[1] = 0.0f, .current_freq = 0.0f, .target_freq = in_target_freq, .bits = in_bits }
+#define H_COMPRESSION_INIT(in_threshold, in_ratio) { .out[0] = 0.0f, .out[1] = 0.0f, .threshold = in_threshold, .ratio = in_ratio }
 
 #define H_AUDIO_INIT(in_start, in_length, in_loop) { .out[0] = 0.0f, .out[1] = 0.0f, .start = in_start, .length = in_length, .loop = in_loop }
 
@@ -37,6 +38,13 @@ typedef struct {
   float target_freq;
   unsigned char bits;
 } h_proc_bitcrush_t;
+
+typedef struct {
+  float out[2];
+
+  float threshold;
+  float ratio;
+} h_proc_compression_t;
 
 /* audio */
 typedef struct {
@@ -99,6 +107,7 @@ float h_wave_noise(h_noise_t *noise);
 
 /* processors */
 void h_proc_bitcrush(h_proc_bitcrush_t *proc, const h_context_t *ctx, float input[2]);
+void h_proc_compression(h_proc_compression_t *proc, const h_context_t *ctx, float input[2]);
 
 /* audio */
 int h_audio_load(h_audio_t *audio, const char *filename);
