@@ -24,7 +24,10 @@ h_wave_sine(float *p, const h_oscillator_t *osc, const h_context_t *ctx)
 float
 h_wave_square(float *p, const h_oscillator_t *osc, const h_context_t *ctx)
 {
-  float phase = (*p + osc->mod) < 0.5 ? 1.0f : -1.0f;
+  float tmp, phase;
+  tmp = fmodf(*p + osc->mod, 1.0f);
+  if (tmp < 0.0f) tmp += 1.0f;
+  phase = tmp < 0.5 ? 1.0f : -1.0f;
   *p += osc->freq / ctx->sr;
   if (*p > 1.0f) *p -= 1.0f;
   return phase;
