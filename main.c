@@ -32,18 +32,18 @@ int
 main()
 {
   h_context_t ctx;
-  h_oscillator_t osc_square = { .freq = 55.0f, .mod = 1.0f };
-  h_oscillator_t lfo_square_freq = { .freq = sqrtf(2) * 0.1, .mod = 1.0f };
-  h_proc_bitcrush_t proc_bitcrush = { .current_freq = 0.0f, .latest_phase = 0.0f };
-  float *buf, duration = 8, osc_square_phase = 0.0f, lfo_square_freq_phase = M_PI;
+  h_oscillator_t osc_square = { .phase = 0.0f, .freq = 55.0f, .mod = 1.0f };
+  h_oscillator_t lfo_square_freq = { .phase = M_PI, .freq = sqrtf(2) * 0.1, .mod = 1.0f };
+  h_proc_bitcrush_t proc_bitcrush = { .phase = 0.0f, .current_freq = 0.0f, .latest_phase = 0.0f, .target_freq = 18000.0f, .bits = 4 };
+  float *buf, duration = 8;
 
   ctx.sample = 0;
   ctx.sr = 41000;
 
   buf = malloc(sizeof(float) * ctx.sr * duration);
   for (ctx.sample = 0; ctx.sample < ctx.sr * duration; ctx.sample++) {
-    osc_square.mod = h_wave_noise() * (h_wave_sine(&lfo_square_freq_phase, &lfo_square_freq, &ctx) + 1) * 0.1;
-    buf[ctx.sample] = h_proc_bitcrush(&proc_bitcrush, &ctx, h_wave_square(&osc_square_phase, &osc_square, &ctx), 18000.0f, 4);
+    osc_square.mod = h_wave_noise() * (h_wave_sine(&lfo_square_freq, &ctx) + 1) * 0.1;
+    buf[ctx.sample] = h_proc_bitcrush(&proc_bitcrush, &ctx, h_wave_square(&osc_square, &ctx));
   }
 
   h_save_wav32("out.wav", ctx.sr, ctx.sr * duration, buf);

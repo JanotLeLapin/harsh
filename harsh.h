@@ -9,13 +9,19 @@ typedef struct {
 } h_context_t;
 
 typedef struct {
+  float phase;
+
   float freq;
   float mod;
 } h_oscillator_t;
 
 typedef struct {
+  float phase;
   float latest_phase;
   float current_freq;
+
+  float target_freq;
+  unsigned char bits;
 } h_proc_bitcrush_t;
 
 /* util */
@@ -57,11 +63,11 @@ h_midi_from_note(const char *note)
 
 /* oscillators */
 float h_wave_noise();
-float h_wave_sine(float *p, const h_oscillator_t *osc, const h_context_t *ctx);
-float h_wave_square(float *p, const h_oscillator_t *osc, const h_context_t *ctx);
-float h_wave_sawtooth(float *p, const h_oscillator_t *osc, const h_context_t *ctx);
+float h_wave_sine(h_oscillator_t *osc, const h_context_t *ctx);
+float h_wave_square(h_oscillator_t *osc, const h_context_t *ctx);
+float h_wave_sawtooth(h_oscillator_t *osc, const h_context_t *ctx);
 
 /* processors */
-float h_proc_bitcrush(h_proc_bitcrush_t *proc, const h_context_t *ctx, float input, float target_freq, unsigned char bits);
+float h_proc_bitcrush(h_proc_bitcrush_t *proc, const h_context_t *ctx, float input);
 
 #endif

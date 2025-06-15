@@ -13,31 +13,31 @@ h_wave_noise()
 }
 
 float
-h_wave_sine(float *p, const h_oscillator_t *osc, const h_context_t *ctx)
+h_wave_sine(h_oscillator_t *osc, const h_context_t *ctx)
 {
-  float phase = sinf(*p + osc->mod);
-  *p += 2.0f * M_PI * osc->freq / ctx->sr;
-  if (*p > 2.0f * M_PI) *p -= 2.0f * M_PI;
+  float phase = sinf(osc->phase + osc->mod);
+  osc->phase += 2.0f * M_PI * osc->freq / ctx->sr;
+  if (osc->phase > 2.0f * M_PI) osc->phase -= 2.0f * M_PI;
   return phase;
 }
 
 float
-h_wave_square(float *p, const h_oscillator_t *osc, const h_context_t *ctx)
+h_wave_square(h_oscillator_t *osc, const h_context_t *ctx)
 {
   float tmp, phase;
-  tmp = fmodf(*p + osc->mod, 1.0f);
+  tmp = fmodf(osc->phase + osc->mod, 1.0f);
   if (tmp < 0.0f) tmp += 1.0f;
   phase = tmp < 0.5 ? 1.0f : -1.0f;
-  *p += osc->freq / ctx->sr;
-  if (*p > 1.0f) *p -= 1.0f;
+  osc->phase += osc->freq / ctx->sr;
+  if (osc->phase > 1.0f) osc->phase -= 1.0f;
   return phase;
 }
 
 float
-h_wave_sawtooth(float *p, const h_oscillator_t *osc, const h_context_t *ctx)
+h_wave_sawtooth(h_oscillator_t *osc, const h_context_t *ctx)
 {
-  float phase = (*p + osc->mod);
-  *p += osc->freq / ctx->sr * 2;
-  if (*p > 1.0f) *p -= 2.0f;
+  float phase = (osc->phase + osc->mod);
+  osc->phase += osc->freq / ctx->sr * 2;
+  if (osc->phase > 1.0f) osc->phase -= 2.0f;
   return phase;
 }
