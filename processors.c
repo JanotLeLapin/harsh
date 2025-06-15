@@ -11,8 +11,8 @@ h_proc_bitcrush(h_proc_bitcrush_t *proc, const h_context_t *ctx, float input[2])
 
   proc->current_freq += proc->target_freq;
   if (proc->current_freq >= ctx->sr) {
+    proc->current_freq -= ctx->sr;
     for (i = 0; i < 2; i++) {
-      proc->current_freq -= ctx->sr;
       encoded = ((uint32_t) (((input[i] + 1) * 0.5) * UINT32_MAX)) >> (32 - proc->bits);
       proc->out[i] = ((float) (encoded << (32 - proc->bits)) / UINT32_MAX) * 2 - 1;
     }
