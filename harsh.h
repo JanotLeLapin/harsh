@@ -12,6 +12,7 @@ typedef struct {
   float sr;
 } h_context_t;
 
+/* oscillators */
 typedef struct {
   float out[2];
   float phase[2];
@@ -21,10 +22,12 @@ typedef struct {
   float detune;
 } h_oscillator_t;
 
+/* other signals */
 typedef struct {
   unsigned int seed;
 } h_noise_t;
 
+/* processors */
 typedef struct {
   float out[2];
   float current_freq;
