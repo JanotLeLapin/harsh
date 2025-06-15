@@ -45,6 +45,7 @@ typedef struct {
   size_t sample_count;
   float *samples;
   size_t current_sample;
+  float current_freq;
 
   float start;
   float length;

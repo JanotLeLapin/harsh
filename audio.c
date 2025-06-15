@@ -38,6 +38,7 @@ h_audio_load(h_audio_t *audio, const char *filename)
   audio->out[0] = 0.0f;
   audio->out[1] = 0.0f;
   audio->current_sample = 0;
+  audio->current_freq = 0.0f;
   return 0;
 }
 
@@ -51,7 +52,11 @@ h_audio_free(h_audio_t *audio)
 void
 h_audio(h_audio_t *audio, const h_context_t *ctx)
 {
-  audio->out[0] = audio->samples[audio->current_sample * 2];
-  audio->out[1] = audio->samples[audio->current_sample * 2 + 1];
-  audio->current_sample++;
+  audio->current_freq += audio->sample_rate;
+  if (audio->current_freq >= ctx->sr) {
+    audio->current_freq -= ctx->sr;
+    audio->out[0] = audio->samples[audio->current_sample * 2];
+    audio->out[1] = audio->samples[audio->current_sample * 2 + 1];
+    audio->current_sample++;
+  }
 }
