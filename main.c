@@ -13,7 +13,7 @@ h_save_wav32(const char *filename, uint32_t sample_rate, size_t sample_count, co
 
   sfinfo.frames = sample_count;
   sfinfo.samplerate = sample_rate;
-  sfinfo.channels = 1;
+  sfinfo.channels = 2;
   sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
   f = sf_open(filename, SFM_WRITE, &sfinfo);
@@ -40,13 +40,14 @@ main()
   ctx.sample = 0;
   ctx.sr = 41000;
 
-  buf = malloc(sizeof(float) * ctx.sr * duration);
+  buf = malloc(sizeof(float) * ctx.sr * duration * 2);
   for (ctx.sample = 0; ctx.sample < ctx.sr * duration; ctx.sample++) {
     osc_square.mod = h_wave_noise() * (h_wave_sine(&lfo_square_freq, &ctx) + 1) * 0.1;
-    buf[ctx.sample] = h_proc_bitcrush(&proc_bitcrush, &ctx, h_wave_square(&osc_square, &ctx));
+    buf[ctx.sample * 2] = h_proc_bitcrush(&proc_bitcrush, &ctx, h_wave_square(&osc_square, &ctx));
+    buf[ctx.sample * 2 + 1] = buf[ctx.sample * 2];
   }
 
-  h_save_wav32("out.wav", ctx.sr, ctx.sr * duration, buf);
+  h_save_wav32("out.wav", ctx.sr, ctx.sr * duration * 2, buf);
 
   free(buf);
   return 0;
