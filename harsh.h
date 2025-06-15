@@ -97,6 +97,18 @@ h_midi_from_note(const char *note)
   return result + (octave + 1) * 12;
 }
 
+inline static float
+h_amp_from_db(float db)
+{
+  return powf(10.0f, db / 20.0f);
+}
+
+inline static float
+h_db_from_amp(float amp)
+{
+  return 20.0f * log10f(amp);
+}
+
 /* oscillators */
 void h_wave_sine(h_oscillator_t *osc, const h_context_t *ctx);
 void h_wave_square(h_oscillator_t *osc, const h_context_t *ctx);
