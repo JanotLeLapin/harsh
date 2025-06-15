@@ -3,15 +3,6 @@
 
 #include "harsh.h"
 
-float
-h_wave_noise()
-{
-  float u1 = ((float) rand() + 1.0f) / ((float) RAND_MAX + 2.0f);
-  float u2 = ((float) rand() + 1.0f) / ((float) RAND_MAX + 2.0f);
-
-  return sqrtf(-2.0f * logf(u1)) * cosf(2.0f * M_PI * u2);
-}
-
 void
 h_wave_sine(h_oscillator_t *osc, const h_context_t *ctx)
 {
@@ -46,4 +37,12 @@ h_wave_sawtooth(h_oscillator_t *osc, const h_context_t *ctx)
     osc->phase[i] = fmodf(osc->phase[i], 1.0f);
     if (osc->phase[i] < 0.0f) osc->phase[i] += 1.0f;
   }
+}
+
+float
+h_wave_noise(h_noise_t *noise)
+{
+  float u1 = ((float) rand_r(&noise->seed) + 1.0f) / ((float) RAND_MAX + 2.0f);
+  float u2 = ((float) rand_r(&noise->seed) + 1.0f) / ((float) RAND_MAX + 2.0f);
+  return sqrtf(-2.0f * logf(u1)) * cosf(2.0f * M_PI * u2);
 }

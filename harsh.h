@@ -22,6 +22,10 @@ typedef struct {
 } h_oscillator_t;
 
 typedef struct {
+  unsigned int seed;
+} h_noise_t;
+
+typedef struct {
   float out[2];
   float current_freq;
 
@@ -67,10 +71,12 @@ h_midi_from_note(const char *note)
 }
 
 /* oscillators */
-float h_wave_noise();
 void h_wave_sine(h_oscillator_t *osc, const h_context_t *ctx);
 void h_wave_square(h_oscillator_t *osc, const h_context_t *ctx);
 void h_wave_sawtooth(h_oscillator_t *osc, const h_context_t *ctx);
+
+/* other signals */
+float h_wave_noise(h_noise_t *noise);
 
 /* processors */
 void h_proc_bitcrush(h_proc_bitcrush_t *proc, const h_context_t *ctx, float input[2]);

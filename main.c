@@ -32,7 +32,8 @@ int
 main()
 {
   h_context_t ctx;
-  h_oscillator_t osc_square = H_OSC_INIT(h_freq_from_midi(h_midi_from_note("A3")), 1.0f, 0.0f);
+  h_noise_t noise = { .seed = 420 };
+  h_oscillator_t osc_square = H_OSC_INIT(h_freq_from_midi(h_midi_from_note("A1")), 1.0f, 0.0f);
   h_oscillator_t lfo_square_freq = H_OSC_INIT(0.25f, 1.0f, 0.0f);
   h_proc_bitcrush_t proc_bitcrush = H_BITCRUSH_INIT(2048.0f * M_PI, 32);
   float *buf, duration = 10;
@@ -42,12 +43,12 @@ main()
 
   buf = malloc(sizeof(float) * ctx.sr * duration * 2);
   for (ctx.sample = 0; ctx.sample < ctx.sr * duration; ctx.sample++) {
-    lfo_square_freq.mod = h_wave_noise() * 0.08f;
+    lfo_square_freq.mod = h_wave_noise(&noise) * 0.08f;
     h_wave_sine(&lfo_square_freq, &ctx);
     osc_square.detune = lfo_square_freq.out[0] * M_PI;
     proc_bitcrush.bits = 32 - (floor((lfo_square_freq.out[0] + 1) * 16));
 
-    h_wave_sawtooth(&osc_square, &ctx);
+    h_wave_sine(&osc_square, &ctx);
     h_proc_bitcrush(&proc_bitcrush, &ctx, osc_square.out);
 
     buf[ctx.sample * 2] = proc_bitcrush.out[0];
