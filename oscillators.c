@@ -17,7 +17,7 @@ h_wave_sine(h_oscillator_t *osc, const h_context_t *ctx)
 {
   size_t i;
   for (i = 0; i < 2; i++) {
-    osc->out[i] = cosf(osc->phase[i] + osc->mod);
+    osc->out[i] = sinf(osc->phase[i] + osc->mod);
     osc->phase[i] += 2.0f * M_PI * (osc->freq + (i * 2.0f - 1.0f) * osc->detune) / ctx->sr;
     osc->phase[i] = fmod(osc->phase[i], 2.0f * M_PI);
     if (osc->phase[i] < 0.0f) osc->phase[i] += 2.0f * M_PI;
