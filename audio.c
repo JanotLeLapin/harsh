@@ -37,7 +37,7 @@ h_audio_load(h_audio_t *audio, const char *filename)
 
   audio->out[0] = 0.0f;
   audio->out[1] = 0.0f;
-  audio->current_sample = 0;
+  audio->current_sample = audio->start * audio->sample_rate;
   audio->current_freq = 0.0f;
   return 0;
 }
@@ -58,5 +58,9 @@ h_audio(h_audio_t *audio, const h_context_t *ctx)
     audio->out[0] = audio->samples[audio->current_sample * 2];
     audio->out[1] = audio->samples[audio->current_sample * 2 + 1];
     audio->current_sample++;
+
+    if (audio->loop && audio->current_sample > (audio->start + audio->length) * audio->sample_rate) {
+      audio->current_sample = audio->start * audio->sample_rate;
+    }
   }
 }
