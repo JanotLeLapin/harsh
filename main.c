@@ -64,8 +64,8 @@ my_noisy_synth(h_context_t *ctx, float duration)
 {
   float *buf;
   h_noise_t noise = { .seed = 420 };
-  h_oscillator_t osc_square = h_osc_init(h_freq_from_midi(h_midi_from_note("A1")), 1.0f, 0.0f);
-  h_oscillator_t lfo_square_freq = h_osc_init(0.25f, 1.0f, 0.0f);
+  h_oscillator_t osc_sine = h_osc_init(h_osc_sine, h_freq_from_midi(h_midi_from_note("A1")), 1.0f, 0.0f);
+  h_oscillator_t lfo_square_freq = h_osc_init(h_osc_sine, 0.25f, 1.0f, 0.0f);
   h_proc_bitcrush_t proc_bitcrush = h_proc_bitcrush_init(2048.0f * M_PI, 32);
   h_audio_t audio = h_audio_init(10.5f, 1.8f, 1);
 
@@ -81,15 +81,15 @@ my_noisy_synth(h_context_t *ctx, float duration)
 
   for (ctx->sample = 0; ctx->sample < ctx->sr * duration; ctx->sample++) {
     lfo_square_freq.mod = h_wave_noise(&noise) * 0.08f;
-    h_osc_sine(&lfo_square_freq, ctx);
-    osc_square.detune = lfo_square_freq.out[0] * M_PI;
+    h_osc(&lfo_square_freq, ctx);
+    osc_sine.detune = lfo_square_freq.out[0] * M_PI;
     proc_bitcrush.bits = 16 - (floor((lfo_square_freq.out[0] + 1) * 8));
 
     h_audio(&audio, ctx);
-    osc_square.mod = (audio.out[0] + audio.out[1]) * 0.5f * 0.2f;
+    osc_sine.mod = (audio.out[0] + audio.out[1]) * 0.5f * 0.2f;
 
-    h_osc_sine(&osc_square, ctx);
-    h_proc_bitcrush(&proc_bitcrush, ctx, osc_square.out);
+    h_osc(&osc_sine, ctx);
+    h_proc_bitcrush(&proc_bitcrush, ctx, osc_sine.out);
 
     buf[ctx->sample * 2] = proc_bitcrush.out[0];
     buf[ctx->sample * 2 + 1] = proc_bitcrush.out[1];
@@ -104,9 +104,9 @@ float *
 my_shaped_sine(h_context_t *ctx, float duration)
 {
   float *buf, out[2], chebyshev_n;
-  h_oscillator_t lfo_phase_mod = h_osc_init(0.25f, 1.0f, 0.0f);
-  h_oscillator_t lfo_chebyshev_n = h_osc_init(0.10f, 1.0f, 0.0f);
-  h_oscillator_t osc_sine = h_osc_init(h_freq_from_midi(h_midi_from_note("A2")), 1.0f, 0.4f);
+  h_oscillator_t lfo_phase_mod = h_osc_init(h_osc_sine, 0.25f, 1.0f, 0.0f);
+  h_oscillator_t lfo_chebyshev_n = h_osc_init(h_osc_sine, 0.10f, 1.0f, 0.0f);
+  h_oscillator_t osc_sine = h_osc_init(h_osc_sine, h_freq_from_midi(h_midi_from_note("A2")), 1.0f, 0.4f);
   size_t i, j;
   h_shaper_t shaper_diode;
   h_shaper_t shaper_chebyshev;
@@ -118,14 +118,14 @@ my_shaped_sine(h_context_t *ctx, float duration)
 
   for (ctx->sample = 0; ctx->sample < ctx->sr * duration; ctx->sample++) {
     /* lfo */
-    h_osc_sine(&lfo_phase_mod, ctx);
-    h_osc_sine(&lfo_chebyshev_n, ctx);
+    h_osc(&lfo_phase_mod, ctx);
+    h_osc(&lfo_chebyshev_n, ctx);
 
     for (i = 0; i < 2; i++) {
       out[i] = 0.0f;
     }
 
-    h_osc_sine(&osc_sine, ctx);
+    h_osc(&osc_sine, ctx);
     osc_sine.mod = osc_sine.out[0] * (lfo_phase_mod.out[0] * 0.5f + 0.5f) * 4.0f;
 
     chebyshev_n = floorf((lfo_chebyshev_n.out[0] * 0.5f + 0.5f) * 6.0f) + 1.0f;
@@ -158,7 +158,7 @@ my_hypersaw(h_context_t *ctx, float duration)
 
   frequency = h_freq_from_midi(h_midi_from_note("C4"));
   for (i = 0; i < stack_size; i++) {
-    synth.voices->stack[i] = h_osc_init(frequency - (i - 3) * 0.5f, 1.0f, 0.0f);
+    synth.voices->stack[i] = h_osc_init(h_osc_sawtooth, frequency - (i - 3) * 0.5f, 1.0f, 0.0f);
   }
 
   buf = malloc(sizeof(float) * ctx->sr * duration * 2);

@@ -4,6 +4,12 @@
 #include "harsh.h"
 
 void
+h_osc(h_oscillator_t *osc, const h_context_t *ctx)
+{
+  osc->osc(osc, ctx);
+}
+
+void
 h_osc_sine(h_oscillator_t *osc, const h_context_t *ctx)
 {
   size_t i;
