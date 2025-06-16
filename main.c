@@ -149,19 +149,16 @@ my_shaped_sine(h_context_t *ctx, float duration)
 float *
 my_hypersaw(h_context_t *ctx, float duration)
 {
-  float *buf, out[2], frequency, initial_phase, voice_count = 8.0f;
-  h_noise_t noise = { .seed = 420 };
-  h_oscillator_t lfo_detune;
-  h_oscillator_t osc_sawtooth[8];
+  float *buf, frequency, initial_phase, stack_size = 7.0f;
+  h_synth_t synth;
   size_t i;
 
+  h_synth_init(&synth, 1);
+  h_voice_init(synth.voices, stack_size, h_osc_sawtooth);
+
   frequency = h_freq_from_midi(h_midi_from_note("C4"));
-  lfo_detune = h_osc_init(0.1f, 1.0f, 0.0f);
-  for (i = 0; i < voice_count; i++) {
-    osc_sawtooth[i] = h_osc_init(0.0f, 1.0f, 0.0f);
-    initial_phase = h_wave_noise(&noise);
-    osc_sawtooth[i].phase[0] = initial_phase;
-    osc_sawtooth[i].phase[1] = initial_phase;
+  for (i = 0; i < stack_size; i++) {
+    synth.voices->stack[i] = h_osc_init(frequency - (i - 3) * 0.5f, 1.0f, 0.0f);
   }
 
   buf = malloc(sizeof(float) * ctx->sr * duration * 2);
@@ -170,19 +167,14 @@ my_hypersaw(h_context_t *ctx, float duration)
   }
 
   for (ctx->sample = 0; ctx->sample < ctx->sr * duration; ctx->sample++) {
-    h_osc_sine(&lfo_detune, ctx);
-    out[0] = 0.0f;
-    out[1] = 0.0f;
-    for (i = 0; i < voice_count; i++) {
-      osc_sawtooth[i].freq = frequency - (i - (voice_count / 2.0f - 1.0f)) * lfo_detune.out[0] * 0.75f + (1.0f / 3.0f);
-      h_osc_sawtooth(&osc_sawtooth[i], ctx);
-      out[0] += osc_sawtooth[i].out[0] / voice_count;
-      out[1] -= osc_sawtooth[i].out[0] / voice_count;
-    }
+    h_synth(&synth, ctx);
 
-    buf[ctx->sample * 2] = out[0];
-    buf[ctx->sample * 2 + 1] = out[1];
+    buf[ctx->sample * 2] = synth.out[0];
+    buf[ctx->sample * 2 + 1] = synth.out[1];
   }
+
+  h_voice_free(synth.voices);
+  h_synth_free(&synth);
 
   return buf;
 }

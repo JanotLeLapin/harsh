@@ -18,6 +18,26 @@ typedef struct {
   float detune;
 } h_oscillator_t;
 
+/* synthesizers */
+typedef void (*h_osc_func_t)(h_oscillator_t *osc, const h_context_t *ctx);
+
+typedef struct {
+  float out[2];
+  h_oscillator_t *stack;
+  size_t stack_size;
+  char is_active;
+  float age;
+
+  h_osc_func_t osc;
+  float velocity;
+} h_voice_t;
+
+typedef struct {
+  float out[2];
+  h_voice_t *voices;
+  size_t voice_count;
+} h_synth_t;
+
 /* other signals */
 typedef struct {
   unsigned int seed;
@@ -123,6 +143,15 @@ h_osc_init(float freq, float mod, float detune)
 void h_osc_sine(h_oscillator_t *osc, const h_context_t *ctx);
 void h_osc_square(h_oscillator_t *osc, const h_context_t *ctx);
 void h_osc_sawtooth(h_oscillator_t *osc, const h_context_t *ctx);
+
+/* synthesizers */
+int h_voice_init(h_voice_t *voice, size_t stack_size, h_osc_func_t osc);
+void h_voice(h_voice_t *voice, const h_context_t *ctx);
+void h_voice_free(h_voice_t *voice);
+
+int h_synth_init(h_synth_t *synth, size_t voice_count);
+void h_synth(h_synth_t *synth, const h_context_t *ctx);
+void h_synth_free(h_synth_t *synth);
 
 /* other signals */
 float h_wave_noise(h_noise_t *noise);
