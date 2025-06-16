@@ -46,6 +46,11 @@ typedef struct {
   float ratio;
 } h_proc_compression_t;
 
+/* shapers */
+typedef struct {
+  float out[2];
+} h_shaper_t;
+
 /* audio */
 typedef struct {
   float out[2];
@@ -120,6 +125,9 @@ float h_wave_noise(h_noise_t *noise);
 /* processors */
 void h_proc_bitcrush(h_proc_bitcrush_t *proc, const h_context_t *ctx, float input[2]);
 void h_proc_compression(h_proc_compression_t *proc, const h_context_t *ctx, float input[2]);
+
+/* shapers */
+void h_shaper_diode(h_shaper_t *shaper, float input[2]);
 
 /* audio */
 int h_audio_load(h_audio_t *audio, const char *filename);
