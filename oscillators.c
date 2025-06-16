@@ -14,7 +14,7 @@ h_osc_sine(h_oscillator_t *osc, const h_context_t *ctx)
 {
   size_t i;
   for (i = 0; i < 2; i++) {
-    osc->out[i] = sinf(osc->phase[i] + osc->mod);
+    osc->out[i] = sinf(osc->phase[i] + osc->mod) * osc->amp;
     osc->phase[i] += 2.0f * M_PI * (osc->freq + (i * 2.0f - 1.0f) * osc->detune) / ctx->sr;
     osc->phase[i] = fmod(osc->phase[i], 2.0f * M_PI);
     if (osc->phase[i] < 0.0f) osc->phase[i] += 2.0f * M_PI;
@@ -26,7 +26,7 @@ h_osc_square(h_oscillator_t *osc, const h_context_t *ctx)
 {
   size_t i;
   for (i = 0; i < 2; i++) {
-    osc->out[i] = osc->phase[i] < 0.5 ? -1.0f : 1.0f;
+    osc->out[i] = (osc->phase[i] < 0.5 ? -1.0f : 1.0f) * osc->amp;
     osc->phase[i] += (osc->freq + (i * 2.0f - 1.0f) * osc->detune) / ctx->sr;
     osc->phase[i] = fmodf(osc->phase[i], 1.0f);
     if (osc->phase[i] < 0.0f) osc->phase[i] += 1.0f;
@@ -38,7 +38,7 @@ h_osc_sawtooth(h_oscillator_t *osc, const h_context_t *ctx)
 {
   size_t i;
   for (i = 0; i < 2; i++) {
-    osc->out[i] = 1.0f - 2.0f * osc->phase[i];
+    osc->out[i] = (1.0f - 2.0f * osc->phase[i]) * osc->amp;
     osc->phase[i] += (osc->freq + (i * 2.0f - 1.0f) * osc->detune) / ctx->sr;
     osc->phase[i] = fmodf(osc->phase[i], 1.0f);
     if (osc->phase[i] < 0.0f) osc->phase[i] += 1.0f;

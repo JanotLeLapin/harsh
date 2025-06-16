@@ -19,6 +19,7 @@ struct h_oscillator_s {
 
   h_osc_func_t osc;
   float freq;
+  float amp;
   float mod;
   float detune;
 };
@@ -131,13 +132,14 @@ h_db_from_amp(float amp)
 
 /* oscillators */
 static inline h_oscillator_t
-h_osc_init(h_osc_func_t osc, float freq, float mod, float detune)
+h_osc_init(h_osc_func_t osc, float freq, float amp, float mod, float detune)
 {
   return (h_oscillator_t) {
     .out = { 0.0f, 0.0f },
     .phase = { 0.0f, 0.0f },
     .osc = osc,
     .freq = freq,
+    .amp = amp,
     .mod = mod,
     .detune = detune,
   };
