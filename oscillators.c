@@ -4,7 +4,7 @@
 #include "harsh.h"
 
 void
-h_wave_sine(h_oscillator_t *osc, const h_context_t *ctx)
+h_osc_sine(h_oscillator_t *osc, const h_context_t *ctx)
 {
   size_t i;
   for (i = 0; i < 2; i++) {
@@ -16,7 +16,7 @@ h_wave_sine(h_oscillator_t *osc, const h_context_t *ctx)
 }
 
 void
-h_wave_square(h_oscillator_t *osc, const h_context_t *ctx)
+h_osc_square(h_oscillator_t *osc, const h_context_t *ctx)
 {
   size_t i;
   for (i = 0; i < 2; i++) {
@@ -28,7 +28,7 @@ h_wave_square(h_oscillator_t *osc, const h_context_t *ctx)
 }
 
 void
-h_wave_sawtooth(h_oscillator_t *osc, const h_context_t *ctx)
+h_osc_sawtooth(h_oscillator_t *osc, const h_context_t *ctx)
 {
   size_t i;
   for (i = 0; i < 2; i++) {

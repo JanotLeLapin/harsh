@@ -81,14 +81,14 @@ my_noisy_synth(h_context_t *ctx, float duration)
 
   for (ctx->sample = 0; ctx->sample < ctx->sr * duration; ctx->sample++) {
     lfo_square_freq.mod = h_wave_noise(&noise) * 0.08f;
-    h_wave_sine(&lfo_square_freq, ctx);
+    h_osc_sine(&lfo_square_freq, ctx);
     osc_square.detune = lfo_square_freq.out[0] * M_PI;
     proc_bitcrush.bits = 16 - (floor((lfo_square_freq.out[0] + 1) * 8));
 
     h_audio(&audio, ctx);
     osc_square.mod = (audio.out[0] + audio.out[1]) * 0.5f * 0.2f;
 
-    h_wave_sine(&osc_square, ctx);
+    h_osc_sine(&osc_square, ctx);
     h_proc_bitcrush(&proc_bitcrush, ctx, osc_square.out);
 
     buf[ctx->sample * 2] = proc_bitcrush.out[0];
@@ -118,14 +118,14 @@ my_shaped_sine(h_context_t *ctx, float duration)
 
   for (ctx->sample = 0; ctx->sample < ctx->sr * duration; ctx->sample++) {
     /* lfo */
-    h_wave_sine(&lfo_phase_mod, ctx);
-    h_wave_sine(&lfo_chebyshev_n, ctx);
+    h_osc_sine(&lfo_phase_mod, ctx);
+    h_osc_sine(&lfo_chebyshev_n, ctx);
 
     for (i = 0; i < 2; i++) {
       out[i] = 0.0f;
     }
 
-    h_wave_sine(&osc_sine, ctx);
+    h_osc_sine(&osc_sine, ctx);
     osc_sine.mod = osc_sine.out[0] * (lfo_phase_mod.out[0] * 0.5f + 0.5f) * 4.0f;
 
     chebyshev_n = floorf((lfo_chebyshev_n.out[0] * 0.5f + 0.5f) * 6.0f) + 1.0f;
