@@ -32,8 +32,8 @@ float *
 my_compressed_sample(h_context_t *ctx, float duration)
 {
   float *buf;
-  h_proc_compression_t proc_compression = H_COMPRESSION_INIT(h_amp_from_db(-60), INFINITY);
-  h_audio_t audio = H_AUDIO_INIT(0.0f, 20.0f, 1);
+  h_proc_compression_t proc_compression = h_proc_compression_init(h_amp_from_db(-60), INFINITY);
+  h_audio_t audio = h_audio_init(0.0f, 20.0f, 1);
 
   buf = malloc(sizeof(float) * ctx->sr * duration * 2);
   if (0 == buf) {
@@ -64,10 +64,10 @@ my_noisy_synth(h_context_t *ctx, float duration)
 {
   float *buf;
   h_noise_t noise = { .seed = 420 };
-  h_oscillator_t osc_square = H_OSC_INIT(h_freq_from_midi(h_midi_from_note("A1")), 1.0f, 0.0f);
-  h_oscillator_t lfo_square_freq = H_OSC_INIT(0.25f, 1.0f, 0.0f);
-  h_proc_bitcrush_t proc_bitcrush = H_BITCRUSH_INIT(2048.0f * M_PI, 32);
-  h_audio_t audio = H_AUDIO_INIT(10.5f, 1.8f, 1);
+  h_oscillator_t osc_square = h_osc_init(h_freq_from_midi(h_midi_from_note("A1")), 1.0f, 0.0f);
+  h_oscillator_t lfo_square_freq = h_osc_init(0.25f, 1.0f, 0.0f);
+  h_proc_bitcrush_t proc_bitcrush = h_proc_bitcrush_init(2048.0f * M_PI, 32);
+  h_audio_t audio = h_audio_init(10.5f, 1.8f, 1);
 
   buf = malloc(sizeof(float) * ctx->sr * duration * 2);
   if (0 == buf) {
@@ -104,9 +104,9 @@ float *
 my_shaped_sine(h_context_t *ctx, float duration)
 {
   float *buf, out[2], chebyshev_n;
-  h_oscillator_t lfo_phase_mod = H_OSC_INIT(0.25f, 1.0f, 0.0f);
-  h_oscillator_t lfo_chebyshev_n = H_OSC_INIT(0.10f, 1.0f, 0.0f);
-  h_oscillator_t osc_sine = H_OSC_INIT(h_freq_from_midi(h_midi_from_note("A2")), 1.0f, 0.0f);
+  h_oscillator_t lfo_phase_mod = h_osc_init(0.25f, 1.0f, 0.0f);
+  h_oscillator_t lfo_chebyshev_n = h_osc_init(0.10f, 1.0f, 0.0f);
+  h_oscillator_t osc_sine = h_osc_init(h_freq_from_midi(h_midi_from_note("A2")), 1.0f, 0.4f);
   size_t i, j;
   h_shaper_t shaper_diode;
   h_shaper_t shaper_chebyshev;

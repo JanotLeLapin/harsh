@@ -3,13 +3,6 @@
 
 #include <math.h>
 
-#define H_OSC_INIT(in_freq, in_mod, in_detune) { .out[0] = 0.0f, .out[1] = 0.0f, .phase[0] = 0.0f, .phase[1] = 0.0f, .freq = in_freq, .mod = in_mod, .detune = in_detune }
-
-#define H_BITCRUSH_INIT(in_target_freq, in_bits) { .out[0] = 0.0f, .out[1] = 0.0f, .current_freq = 0.0f, .target_freq = in_target_freq, .bits = in_bits }
-#define H_COMPRESSION_INIT(in_threshold, in_ratio) { .out[0] = 0.0f, .out[1] = 0.0f, .threshold = in_threshold, .ratio = in_ratio }
-
-#define H_AUDIO_INIT(in_start, in_length, in_loop) { .out[0] = 0.0f, .out[1] = 0.0f, .start = in_start, .length = in_length, .loop = in_loop }
-
 typedef struct {
   unsigned long sample;
   float sr;
@@ -115,6 +108,18 @@ h_db_from_amp(float amp)
 }
 
 /* oscillators */
+static inline h_oscillator_t
+h_osc_init(float freq, float mod, float detune)
+{
+  return (h_oscillator_t) {
+    .out = { 0.0f, 0.0f },
+    .phase = { 0.0f, 0.0f },
+    .freq = freq,
+    .mod = mod,
+    .detune = detune,
+  };
+}
+
 void h_osc_sine(h_oscillator_t *osc, const h_context_t *ctx);
 void h_osc_square(h_oscillator_t *osc, const h_context_t *ctx);
 void h_osc_sawtooth(h_oscillator_t *osc, const h_context_t *ctx);
@@ -123,6 +128,27 @@ void h_osc_sawtooth(h_oscillator_t *osc, const h_context_t *ctx);
 float h_wave_noise(h_noise_t *noise);
 
 /* processors */
+static inline h_proc_bitcrush_t
+h_proc_bitcrush_init(float target_freq, unsigned char bits)
+{
+  return (h_proc_bitcrush_t) {
+    .out = { 0.0f, 0.0f },
+    .current_freq = 0.0f,
+    .target_freq = target_freq,
+    .bits = bits,
+  };
+}
+
+static inline h_proc_compression_t
+h_proc_compression_init(float threshold, float ratio)
+{
+  return (h_proc_compression_t) {
+    .out = { 0.0f, 0.0f, },
+    .threshold = threshold,
+    .ratio = ratio,
+  };
+}
+
 void h_proc_bitcrush(h_proc_bitcrush_t *proc, const h_context_t *ctx, float input[2]);
 void h_proc_compression(h_proc_compression_t *proc, const h_context_t *ctx, float input[2]);
 
@@ -131,6 +157,22 @@ void h_shaper_diode(h_shaper_t *shaper, float input[2]);
 void h_shaper_chebyshev(h_shaper_t *shaper, int n, float input[2]);
 
 /* audio */
+static inline h_audio_t
+h_audio_init(float start, float length, char loop)
+{
+  return (h_audio_t) {
+    .out = { 0.0f, 0.0f, },
+    .sample_rate = 0.0f,
+    .sample_count = 0,
+    .samples = 0,
+    .current_sample = 0,
+    .current_freq = 0,
+    .start = start,
+    .length = length,
+    .loop = loop,
+  };
+}
+
 int h_audio_load(h_audio_t *audio, const char *filename);
 void h_audio_free(h_audio_t *audio);
 void h_audio(h_audio_t *audio, const h_context_t *ctx);
