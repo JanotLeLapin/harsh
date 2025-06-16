@@ -155,6 +155,7 @@ void h_proc_compression(h_proc_compression_t *proc, const h_context_t *ctx, floa
 /* shapers */
 void h_shaper_diode(h_shaper_t *shaper, float input[2]);
 void h_shaper_chebyshev(h_shaper_t *shaper, int n, float input[2]);
+void h_shaper_foldback(h_shaper_t *shaper, float threshold, float input[2]);
 
 /* audio */
 static inline h_audio_t

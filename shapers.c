@@ -32,3 +32,19 @@ h_shaper_chebyshev(h_shaper_t *shaper, int n, float *input)
     shaper->out[i] = chebyshev(n, input[i]);
   }
 }
+
+void
+h_shaper_foldback(h_shaper_t *shaper, float threshold, float *input)
+{
+  size_t i;
+  float abs_in, diff;
+  for (i = 0; i < 2; i++) {
+    abs_in = fabs(input[i]);
+    diff = abs_in - threshold;
+    if (diff < 0) {
+      shaper->out[i] = input[i];
+      continue;
+    }
+    shaper->out[i] = threshold - fabs(fabs(fmod(input[i] - threshold, threshold * 4)) - threshold * 2);
+  }
+}
