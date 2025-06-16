@@ -100,6 +100,53 @@ my_noisy_synth(h_context_t *ctx, float duration)
   return buf;
 }
 
+float *
+my_shaped_sine(h_context_t *ctx, float duration)
+{
+  float *buf, out[2], chebyshev_n;
+  h_oscillator_t lfo_phase_mod = H_OSC_INIT(0.25f, 1.0f, 0.0f);
+  h_oscillator_t lfo_chebyshev_n = H_OSC_INIT(0.10f, 1.0f, 0.0f);
+  h_oscillator_t osc_sine = H_OSC_INIT(h_freq_from_midi(h_midi_from_note("A2")), 1.0f, 0.0f);
+  size_t i, j;
+  h_shaper_t shaper_diode;
+  h_shaper_t shaper_chebyshev;
+
+  buf = malloc(sizeof(float) * ctx->sr * duration * 2);
+  if (0 == buf) {
+    return 0;
+  }
+
+  for (ctx->sample = 0; ctx->sample < ctx->sr * duration; ctx->sample++) {
+    /* lfo */
+    h_wave_sine(&lfo_phase_mod, ctx);
+    h_wave_sine(&lfo_chebyshev_n, ctx);
+
+    for (i = 0; i < 2; i++) {
+      out[i] = 0.0f;
+    }
+
+    h_wave_sine(&osc_sine, ctx);
+    osc_sine.mod = osc_sine.out[0] * (lfo_phase_mod.out[0] * 0.5f + 0.5f) * 4.0f;
+
+    chebyshev_n = floorf((lfo_chebyshev_n.out[0] * 0.5f + 0.5f) * 6.0f) + 1.0f;
+
+    for (i = 0; i <= chebyshev_n; i++) {
+      h_shaper_chebyshev(&shaper_chebyshev, i, osc_sine.out);
+      for (j = 0; j < 2; j++) {
+        out[j] += shaper_chebyshev.out[j] * 1.0f / chebyshev_n;
+      }
+    }
+
+    h_shaper_diode(&shaper_diode, out);
+
+    buf[ctx->sample * 2] = shaper_diode.out[0];
+    buf[ctx->sample * 2 + 1] = shaper_diode.out[1];
+  }
+
+  return buf;
+}
+
+
 int
 main()
 {
@@ -120,6 +167,14 @@ main()
     return -1;
   }
   h_save_wav32("compressed_sample.wav", ctx.sr, ctx.sr * duration * 2, buf);
+  free(buf);
+
+  buf = my_shaped_sine(&ctx, duration);
+  if (0 == buf) {
+    fprintf(stderr, "could not synthesize shaped sine\n");
+    return -1;
+  }
+  h_save_wav32("shaped_sine.wav", ctx.sr, ctx.sr * duration * 2, buf);
   free(buf);
 
   return 0;
