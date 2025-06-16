@@ -2,6 +2,7 @@
 #include <sndfile.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "harsh.h"
 
@@ -50,8 +51,7 @@ my_compressed_sample(h_context_t *ctx, float duration)
 
     h_proc_compression(&proc_compression, ctx, audio.out);
 
-    buf[ctx->sample * 2] = proc_compression.out[0] * 100.0f;
-    buf[ctx->sample * 2 + 1] = proc_compression.out[1] * 100.0f;
+    memcpy(buf + ctx->sample * 2, proc_compression.out, sizeof(float) * 2);
   }
 
   h_audio_free(&audio);
@@ -91,8 +91,7 @@ my_noisy_synth(h_context_t *ctx, float duration)
     h_osc(&osc_sine, ctx);
     h_proc_bitcrush(&proc_bitcrush, ctx, osc_sine.out);
 
-    buf[ctx->sample * 2] = proc_bitcrush.out[0];
-    buf[ctx->sample * 2 + 1] = proc_bitcrush.out[1];
+    memcpy(buf + ctx->sample * 2, proc_bitcrush.out, sizeof(float) * 2);
   }
 
   h_audio_free(&audio);
@@ -139,8 +138,7 @@ my_shaped_sine(h_context_t *ctx, float duration)
 
     h_shaper_diode(&shaper_diode, out);
 
-    buf[ctx->sample * 2] = shaper_diode.out[0];
-    buf[ctx->sample * 2 + 1] = shaper_diode.out[1];
+    memcpy(buf + ctx->sample * 2, shaper_diode.out, sizeof(float) * 2);
   }
 
   return buf;
@@ -168,9 +166,7 @@ my_hypersaw(h_context_t *ctx, float duration)
 
   for (ctx->sample = 0; ctx->sample < ctx->sr * duration; ctx->sample++) {
     h_synth(&synth, ctx);
-
-    buf[ctx->sample * 2] = synth.out[0];
-    buf[ctx->sample * 2 + 1] = synth.out[1];
+    memcpy(buf + ctx->sample * 2, synth.out, sizeof(float) * 2);
   }
 
   h_voice_free(synth.voices);
