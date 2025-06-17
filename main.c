@@ -175,6 +175,80 @@ my_hypersaw(h_context_t *ctx, float duration)
   return buf;
 }
 
+float *
+my_chords(h_context_t *ctx, float duration)
+{
+  float *buf, initial_phase;
+  size_t voice_count = 4, i;
+  h_synth_t chords_synth;
+  h_synth_t bass_synth;
+  h_proc_bitcrush_t chords_bitcrush = h_proc_bitcrush_init(18000.0f, 10);
+  h_proc_bitcrush_t bass_bitcrush = h_proc_bitcrush_init(12000.0f, 8);
+  h_shaper_t bass_shaper;
+  h_note_t chords_notes[16], bass_notes[4];
+
+  chords_notes[0] = (h_note_t) { .pitch = h_midi_from_note("C3"), .start = 0.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[1] = (h_note_t) { .pitch = h_midi_from_note("E3"), .start = 0.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[2] = (h_note_t) { .pitch = h_midi_from_note("G3"), .start = 0.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[3] = (h_note_t) { .pitch = h_midi_from_note("B3"), .start = 0.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[4] = (h_note_t) { .pitch = h_midi_from_note("A2"), .start = 2.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[5] = (h_note_t) { .pitch = h_midi_from_note("C3"), .start = 2.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[6] = (h_note_t) { .pitch = h_midi_from_note("E3"), .start = 2.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[7] = (h_note_t) { .pitch = h_midi_from_note("A3"), .start = 2.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[8] = (h_note_t) { .pitch = h_midi_from_note("D3"), .start = 4.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[9] = (h_note_t) { .pitch = h_midi_from_note("F3"), .start = 4.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[10] = (h_note_t) { .pitch = h_midi_from_note("A3"), .start = 4.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[11] = (h_note_t) { .pitch = h_midi_from_note("C4"), .start = 4.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[12] = (h_note_t) { .pitch = h_midi_from_note("B2"), .start = 6.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[13] = (h_note_t) { .pitch = h_midi_from_note("D3"), .start = 6.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[14] = (h_note_t) { .pitch = h_midi_from_note("A3"), .start = 6.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  chords_notes[15] = (h_note_t) { .pitch = h_midi_from_note("B3"), .start = 6.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+
+  bass_notes[0] = (h_note_t) { .pitch = h_midi_from_note("C2"), .start = 0.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  bass_notes[1] = (h_note_t) { .pitch = h_midi_from_note("A1"), .start = 2.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  bass_notes[2] = (h_note_t) { .pitch = h_midi_from_note("D2"), .start = 4.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+  bass_notes[3] = (h_note_t) { .pitch = h_midi_from_note("G2"), .start = 6.0f, .duration = 2.0f, .velocity = 1.0f, .detune = 0.0f, };
+
+  h_synth_init(&chords_synth, voice_count);
+  h_synth_init(&bass_synth, 1);
+
+  for (i = 0; i < voice_count; i++) {
+    h_voice_init(&chords_synth.voices[i], 1, h_osc_sine);
+    chords_synth.voices[i].stack[0] = h_osc_init(h_osc_sine, 0.0f, h_amp_from_db(-16.0f), 0.0f, 0.0f);
+  }
+
+  h_voice_init(&bass_synth.voices[0], 1, h_osc_sine);
+  bass_synth.voices[0].stack[0] = h_osc_init(h_osc_square, 0.0f, h_amp_from_db(-20.0f), 0.0f, 0.1f);
+
+  buf = malloc(sizeof(float) * ctx->sr * duration * 2);
+  if (0 == buf) {
+    return 0;
+  }
+
+  for (ctx->sample = 0; ctx->sample < ctx->sr * duration; ctx->sample++) {
+    h_note(&chords_synth, ctx, chords_notes, 16);
+    h_note(&bass_synth, ctx, bass_notes, 4);
+
+    h_proc_bitcrush(&chords_bitcrush, ctx, chords_synth.out);
+    h_proc_bitcrush(&bass_bitcrush, ctx, bass_synth.out);
+    h_shaper_foldback(&bass_shaper, 0.7f, bass_bitcrush.out);
+
+    for (i = 0; i < 2; i++) {
+      buf[ctx->sample * 2 + i] = chords_bitcrush.out[i] + bass_shaper.out[i];
+    }
+  }
+
+  for (i = 0; i < voice_count; i++) {
+    h_voice_free(&chords_synth.voices[i]);
+  }
+  h_voice_free(&bass_synth.voices[0]);
+
+  h_synth_free(&chords_synth);
+  h_synth_free(&bass_synth);
+
+  return buf;
+}
+
 int
 main()
 {
@@ -211,6 +285,15 @@ main()
     return -1;
   }
   h_save_wav32("hypersaw.wav", ctx.sr, ctx.sr * duration * 2, buf);
+  free(buf);
+
+  duration = 8;
+  buf = my_chords(&ctx, duration);
+  if (0 == buf) {
+    fprintf(stderr, "could not synthesize chords\n");
+    return -1;
+  }
+  h_save_wav32("chords.wav", ctx.sr, ctx.sr * duration * 2, buf);
   free(buf);
 
   return 0;

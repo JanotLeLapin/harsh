@@ -81,6 +81,15 @@ typedef struct {
   char loop;
 } h_audio_t;
 
+/* notes */
+typedef struct {
+  unsigned char pitch;
+  float start;
+  float duration;
+  float velocity;
+  float detune;
+} h_note_t;
+
 /* util */
 inline static float
 h_freq_from_midi(char midi)
@@ -212,5 +221,8 @@ h_audio_init(float start, float length, char loop)
 int h_audio_load(h_audio_t *audio, const char *filename);
 void h_audio_free(h_audio_t *audio);
 void h_audio(h_audio_t *audio, const h_context_t *ctx);
+
+/* notes */
+void h_note(h_synth_t *synth, const h_context_t *ctx, h_note_t *notes, size_t note_count);
 
 #endif
