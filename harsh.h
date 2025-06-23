@@ -23,6 +23,57 @@ typedef struct {
   h_hm_entry_t **buckets;
 } h_hm_t;
 
+/* core */
+typedef struct {
+  size_t current_frame;
+  float sr;
+} h_context;
+
+/* dsp */
+typedef void *h_node_value_t;
+
+typedef struct {
+  enum {
+    H_NODE_MATH_ADD,
+    H_NODE_MATH_MUL,
+  } op;
+  char *left;
+  char *right;
+} h_node_math_t;
+
+typedef struct {
+  enum {
+    H_NODE_OSC_SINE,
+    H_NODE_OSC_SQUARE,
+    H_NODE_OSC_SAWTOOTH,
+  } type;
+  float current;
+  char *freq;
+  char *phase;
+} h_node_osc_t;
+
+typedef enum {
+  H_NODE_VALUE,
+  H_NODE_MATH,
+
+  H_NODE_OSC,
+} h_graph_node_type_t;
+
+typedef union {
+  h_node_value_t value;
+  h_node_math_t math;
+
+  h_node_osc_t osc;
+} h_graph_node_data_t;
+
+typedef struct {
+  char name[32];
+  float out;
+  size_t last_frame;
+  h_graph_node_type_t type;
+  h_graph_node_data_t data;
+} h_graph_node_t;
+
 /* util */
 static size_t
 h_hash_string(const void *key)
@@ -49,5 +100,8 @@ int h_hm_put(h_hm_t *hm, const void *key, void *value);
 void *h_hm_get(h_hm_t *hm, const void *key);
 void h_hm_remove(h_hm_t *hm, const void *key);
 void h_hm_free(h_hm_t *hm);
+
+/* dsp */
+void h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx);
 
 #endif
