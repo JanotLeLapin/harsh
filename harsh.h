@@ -104,4 +104,7 @@ void h_hm_free(h_hm_t *hm);
 /* dsp */
 void h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx);
 
+/* dsl */
+void h_dsl_load(h_hm_t *g, const char *src, size_t src_len);
+
 #endif
