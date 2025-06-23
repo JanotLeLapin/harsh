@@ -2,7 +2,7 @@ CC = gcc
 LDFLAGS = -lm -lsndfile
 CFLAGS = -Wall -Wextra -O3
 
-SRCS = harsh.c
+SRCS = harsh.c graph.c dsl.c hm.c
 OBJS = $(SRCS:.c=.o)
 
 TARGET = harsh
