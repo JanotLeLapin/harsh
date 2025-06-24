@@ -76,3 +76,20 @@ h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 
   node->last_frame = ctx->current_frame;
 }
+
+void
+h_graph_free(h_hm_t *g)
+{
+  size_t i;
+  h_hm_entry_t *entry;
+
+  for (i = 0; i < g->size; i++) {
+    entry = g->buckets[i];
+    while (entry) {
+      free(entry->value);
+      entry = entry->next;
+    }
+  }
+
+  h_hm_free(g);
+}

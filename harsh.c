@@ -70,7 +70,7 @@ main(void)
 
   h_graph_render_wav32("out.wav", &graph, &ctx, 512 * 10, 512);
 
-  h_hm_free(&graph);
+  h_graph_free(&graph);
 
   printf("hello, world!\n");
   return 0;
