@@ -233,6 +233,22 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
       }
       *ptr = graph_expr_from_ast_put(g, &an->children[i + 1], elem_count, ctx)->name;
     }
+  } else if (STR_EQ("bitcrush", an->name)) {
+    gn.type = H_NODE_BITCRUSH;
+    gn.data.bitcrush.current_freq = 0.0f;
+    gn.data.bitcrush.input = graph_expr_from_ast_put(g, &an->children[0], elem_count, ctx)->name;
+    for (i = 1; i < an->child_count; i += 2) {
+      if (STR_EQ(":target_freq", an->children[i].name)) {
+        ptr = &gn.data.bitcrush.target_freq;
+      } else if (STR_EQ(":bits", an->children[i].name)) {
+        ptr = &gn.data.bitcrush.bits;
+      } else {
+        log_message(an, &an->children[i].plain, MESSAGE_WARN, ctx);
+        fprintf(stderr, "unexpected argument for bitcrush: '%.*s'\n", (int) an->children[i].plain.len - 1, an->children[i].plain.p + 1);
+        continue;
+      }
+      *ptr = graph_expr_from_ast_put(g, &an->children[i + 1], elem_count, ctx)->name;
+    }
   } else {
     gn.type = H_NODE_VALUE;
     memcpy(tmp, an->name.p, an->name.len);
