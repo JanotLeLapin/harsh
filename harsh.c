@@ -22,6 +22,10 @@ main(void)
   src = mmap(0, len, PROT_READ, MAP_PRIVATE, fd, 0);
 
   h_dsl_load(&graph, src, len);
+
+  munmap(src, len);
+  close(fd);
+
   out = h_hm_get(&graph, "output");
 
   ctx.current_frame = 0;
