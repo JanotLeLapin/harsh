@@ -5,6 +5,13 @@
 #include <string.h>
 
 /* util */
+typedef struct {
+  size_t capacity;
+  size_t size;
+  size_t elem_size;
+  void *data;
+} h_vec_t;
+
 typedef char (*h_hm_eq_func_t)(const void *a, const void *b);
 typedef size_t (*h_hm_hash_func_t)(const void *key);
 
@@ -93,6 +100,13 @@ typedef struct {
 } h_graph_node_t;
 
 /* util */
+int h_vec_init(h_vec_t *v, size_t initial_capacity, size_t elem_size);
+void *h_vec_push(h_vec_t *v, void *data);
+void *h_vec_push_empty(h_vec_t *v);
+void *h_vec_get(h_vec_t *v, int index);
+void h_vec_remove(h_vec_t *v, int index);
+void h_vec_free(h_vec_t *v);
+
 static size_t
 h_hash_string(const void *key)
 {

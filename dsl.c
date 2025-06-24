@@ -30,8 +30,7 @@ typedef struct {
 typedef struct ast_node_s {
   src_string_t plain;
   src_string_t name;
-  size_t child_count;
-  struct ast_node_s *children;
+  h_vec_t children;
 } ast_node_t;
 
 static inline char
@@ -129,8 +128,7 @@ parse_node(ast_node_t *node, parser_ctx_t *ctx)
   }
   node->name.len = ctx->src + ctx->i - node->name.p;
 
-  node->children = malloc(sizeof(ast_node_t) * 8);
-  node->child_count = 0;
+  h_vec_init(&node->children, 8, sizeof(ast_node_t));
 
   for (;;) {
     while (is_whitespace(ctx->src[ctx->i])) {
@@ -143,14 +141,13 @@ parse_node(ast_node_t *node, parser_ctx_t *ctx)
       node->plain.len = ctx->src + ctx->i - node->plain.p;
       return;
     case '(':
-      parse_node(&node->children[node->child_count], ctx);
-      node->child_count++;
+      parse_node(h_vec_push_empty(&node->children), ctx);
       continue;
     default:
       break;
     }
 
-    child = &node->children[node->child_count];
+    child = h_vec_push_empty(&node->children);
     child->name.p = ctx->src + ctx->i;
     child->plain.p = child->name.p;
     while (!is_whitespace(ctx->src[ctx->i]) && ')' != ctx->src[ctx->i]) {
@@ -159,10 +156,7 @@ parse_node(ast_node_t *node, parser_ctx_t *ctx)
     child->name.len = ctx->src + ctx->i - child->name.p;
     child->plain.len = child->name.len;
 
-    child->children = 0;
-    child->child_count = 0;
-
-    node->child_count++;
+    memset(&child->children, 0, sizeof(h_vec_t));
   }
 }
 
@@ -171,13 +165,15 @@ free_node(ast_node_t *node)
 {
   size_t i;
 
-  for (i = 0; i < node->child_count; i++) {
-    free_node(&node->children[i]);
+  if (0 == node->children.data) {
+    return;
   }
 
-  if (0 != node->children) {
-    free(node->children);
+  for (i = 0; i < node->children.size; i++) {
+    free_node(h_vec_get(&node->children, i));
   }
+
+  h_vec_free(&node->children);
 }
 
 static h_graph_node_t *graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_ctx_t *ctx);
@@ -214,6 +210,7 @@ static h_graph_node_t *
 graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_ctx_t *ctx)
 {
   h_graph_node_t gn, *inserted;
+  ast_node_t *child;
   char tmp[8], **ptr;
   int res;
   size_t i;
@@ -223,8 +220,9 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
   gn.last_frame = 0;
 
   if (STR_EQ("ref", an->name)) {
-    memcpy(gn.name, an->children[0].name.p, an->children[0].name.len);
-    gn.name[an->children[0].name.len] = '\0';
+    child = h_vec_get(&an->children, 0);
+    memcpy(gn.name, child->name.p, child->name.len);
+    gn.name[child->name.len] = '\0';
     inserted = h_hm_get(g, gn.name);
     return inserted;
   } else if (-1 != (res = str_arr_includes(OP_MATH, an->name))) {
@@ -237,14 +235,15 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
       gn.data.math.op = H_NODE_MATH_MUL;
       break;
     }
-    gn.data.math.left = graph_expr_from_ast_put(g, &an->children[0], elem_count, ctx)->name;
-    gn.data.math.right = graph_expr_from_ast_put(g, &an->children[1], elem_count, ctx)->name;
+    gn.data.math.left = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx)->name;
+    gn.data.math.right = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count, ctx)->name;
   } else if (STR_EQ("noise", an->name)) {
     gn.type = H_NODE_NOISE;
-    for (i = 0; i < an->child_count; i += 2) {
-      if (STR_EQ(":seed", an->children[i].name)) {
+    for (i = 0; i < an->children.size; i += 2) {
+      child = h_vec_get(&an->children, i);
+      if (STR_EQ(":seed", child->name)) {
         gn.data.noise.state = 1;
-        gn.data.noise.seed = graph_expr_from_ast_put(g, &an->children[i + 1], elem_count, ctx)->name;
+        gn.data.noise.seed = graph_expr_from_ast_put(g, h_vec_get(&an->children, i + 1), elem_count, ctx)->name;
       }
     }
   } else if (-1 != (res = str_arr_includes(OP_OSC, an->name))) {
@@ -261,33 +260,36 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
       break;
     }
     gn.data.osc.current = 0.0f;
-    for (i = 0; i < an->child_count; i += 2) {
-      if (STR_EQ(":freq", an->children[i].name)) {
+    for (i = 0; i < an->children.size; i += 2) {
+      child = h_vec_get(&an->children, i);
+      if (STR_EQ(":freq", child->name)) {
         ptr = &gn.data.osc.freq;
-      } else if (STR_EQ(":phase", an->children[i].name)) {
+      } else if (STR_EQ(":phase", child->name)) {
         ptr = &gn.data.osc.phase;
       } else {
-        log_message(an, &an->children[i].plain, MESSAGE_WARN, ctx);
-        fprintf(stderr, "unexpected argument for osc: '%.*s'\n", (int) an->children[i].plain.len - 1, an->children[i].plain.p + 1);
+        log_message(an, &child->plain, MESSAGE_WARN, ctx);
+        fprintf(stderr, "unexpected argument for osc: '%.*s'\n", (int) child->plain.len - 1, child->plain.p + 1);
         continue;
       }
-      *ptr = graph_expr_from_ast_put(g, &an->children[i + 1], elem_count, ctx)->name;
+      *ptr = graph_expr_from_ast_put(g, h_vec_get(&an->children, i + 1), elem_count, ctx)->name;
     }
   } else if (STR_EQ("bitcrush", an->name)) {
+    child = h_vec_get(&an->children, 0);
     gn.type = H_NODE_BITCRUSH;
     gn.data.bitcrush.current_freq = 0.0f;
-    gn.data.bitcrush.input = graph_expr_from_ast_put(g, &an->children[0], elem_count, ctx)->name;
-    for (i = 1; i < an->child_count; i += 2) {
-      if (STR_EQ(":target_freq", an->children[i].name)) {
+    gn.data.bitcrush.input = graph_expr_from_ast_put(g, child, elem_count, ctx)->name;
+    for (i = 1; i < an->children.size; i += 2) {
+      child = h_vec_get(&an->children, i);
+      if (STR_EQ(":target_freq", child->name)) {
         ptr = &gn.data.bitcrush.target_freq;
-      } else if (STR_EQ(":bits", an->children[i].name)) {
+      } else if (STR_EQ(":bits", child->name)) {
         ptr = &gn.data.bitcrush.bits;
       } else {
-        log_message(an, &an->children[i].plain, MESSAGE_WARN, ctx);
-        fprintf(stderr, "unexpected argument for bitcrush: '%.*s'\n", (int) an->children[i].plain.len - 1, an->children[i].plain.p + 1);
+        log_message(an, &child->plain, MESSAGE_WARN, ctx);
+        fprintf(stderr, "unexpected argument for bitcrush: '%.*s'\n", (int) child->plain.len - 1, child->plain.p + 1);
         continue;
       }
-      *ptr = graph_expr_from_ast_put(g, &an->children[i + 1], elem_count, ctx)->name;
+      *ptr = graph_expr_from_ast_put(g, h_vec_get(&an->children, i + 1), elem_count, ctx)->name;
     }
   } else {
     gn.type = H_NODE_VALUE;
@@ -305,11 +307,13 @@ static void
 graph_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_ctx_t *ctx)
 {
   h_graph_node_t *gn;
+  ast_node_t *child;
 
   if (STR_EQ("def", an->name)) {
-    gn = graph_expr_from_ast(g, &an->children[1], elem_count, ctx);
-    memcpy(gn->name, an->children[0].name.p, an->children[0].name.len);
-    gn->name[an->children[0].name.len] = '\0';
+    child = h_vec_get(&an->children, 0);
+    gn = graph_expr_from_ast(g, h_vec_get(&an->children, 1), elem_count, ctx);
+    memcpy(gn->name, child->name.p, child->name.len);
+    gn->name[child->name.len] = '\0';
     h_hm_put(g, gn->name, gn);
   } else {
     graph_expr_from_ast_put(g, an, elem_count, ctx);
@@ -327,8 +331,8 @@ h_dsl_load(h_hm_t *g, const char *src, size_t src_len)
   h_hm_init(g, 16, 0.75f, h_hash_string, h_eq_string);
 
   parse_node(&root, &ctx);
-  for (i = 0; i < root.child_count; i++) {
-    graph_from_ast(g, &root.children[i], &elem_count, &ctx);
+  for (i = 0; i < root.children.size; i++) {
+    graph_from_ast(g, h_vec_get(&root.children, i), &elem_count, &ctx);
   }
   free_node(&root);
 }
