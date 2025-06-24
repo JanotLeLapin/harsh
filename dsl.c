@@ -114,7 +114,7 @@ graph_expr_from_ast_put(h_hm_t *g, ast_node_t *an, size_t *elem_count)
 static h_graph_node_t *
 graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count)
 {
-  h_graph_node_t gn, *inserted, *child;
+  h_graph_node_t gn, *inserted;
   char tmp[8], **ptr;
   size_t i;
 

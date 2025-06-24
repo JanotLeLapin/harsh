@@ -112,7 +112,6 @@ inline static void
 graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
 {
   char margin[32];
-  size_t i;
 
   memset(margin, ' ', depth);
   margin[depth] = '\0';
