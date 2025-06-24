@@ -152,7 +152,7 @@ h_graph_free(h_hm_t *g)
   size_t i;
   h_hm_entry_t *entry;
 
-  for (i = 0; i < g->size; i++) {
+  for (i = 0; i < g->capacity; i++) {
     entry = g->buckets[i];
     while (entry) {
       free(entry->value);
