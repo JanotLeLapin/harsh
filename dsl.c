@@ -4,13 +4,17 @@
 
 #include "harsh.h"
 
-#define STR_EQ(expected, actual) (!strncmp(expected, actual.p, sizeof(expected) - 1) && sizeof(expected) - 1 == actual.len)
+#define STR_EQN(expected, actual, length) ((!strncmp(expected, actual.p, length) && length == actual.len))
+#define STR_EQ(expected, actual) STR_EQN(expected, actual, sizeof(expected) - 1)
 
 #define COLOR_RESET "\x1b[0m"
 #define COLOR_RED "\x1b[31m"
 #define COLOR_YELLOW "\x1b[33m"
 #define COLOR_GREEN "\x1b[32m"
 #define COLOR_BLUE "\x1b[36m"
+
+static const char *OP_MATH[] = { "+", "*", 0 };
+static const char *OP_OSC[] = { "sine", "square", "sawtooth", 0 };
 
 typedef struct {
   const char *src;
@@ -188,11 +192,30 @@ graph_expr_from_ast_put(h_hm_t *g, ast_node_t *an, size_t *elem_count, const par
   return gn;
 }
 
+static inline int
+str_arr_includes(const char **expected, src_string_t str)
+{
+  size_t i;
+
+  for (i = 0;; i++) {
+    if (0 == expected[i]) {
+      break;
+    }
+
+    if (STR_EQN(expected[i], str, strlen(expected[i]))) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
 static h_graph_node_t *
 graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_ctx_t *ctx)
 {
   h_graph_node_t gn, *inserted;
   char tmp[8], **ptr;
+  int res;
   size_t i;
 
   snprintf(gn.name, sizeof(gn.name), "_anon_%ld", (*elem_count)++);
@@ -204,9 +227,16 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
     gn.name[an->children[0].name.len] = '\0';
     inserted = h_hm_get(g, gn.name);
     return inserted;
-  } else if (STR_EQ("*", an->name)) {
+  } else if (-1 != (res = str_arr_includes(OP_MATH, an->name))) {
     gn.type = H_NODE_MATH;
-    gn.data.math.op = H_NODE_MATH_MUL;
+    switch (res) {
+    case 0:
+      gn.data.math.op = H_NODE_MATH_ADD;
+      break;
+    case 1:
+      gn.data.math.op = H_NODE_MATH_MUL;
+      break;
+    }
     gn.data.math.left = graph_expr_from_ast_put(g, &an->children[0], elem_count, ctx)->name;
     gn.data.math.right = graph_expr_from_ast_put(g, &an->children[1], elem_count, ctx)->name;
   } else if (STR_EQ("noise", an->name)) {
@@ -217,9 +247,19 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
         gn.data.noise.seed = graph_expr_from_ast_put(g, &an->children[i + 1], elem_count, ctx)->name;
       }
     }
-  } else if (STR_EQ("sine", an->name)) {
+  } else if (-1 != (res = str_arr_includes(OP_OSC, an->name))) {
     gn.type = H_NODE_OSC;
-    gn.data.osc.type = H_NODE_OSC_SINE;
+    switch (res) {
+    case 0:
+      gn.data.osc.type = H_NODE_OSC_SINE;
+      break;
+    case 1:
+      gn.data.osc.type = H_NODE_OSC_SQUARE;
+      break;
+    case 2:
+      gn.data.osc.type = H_NODE_OSC_SAWTOOTH;
+      break;
+    }
     gn.data.osc.current = 0.0f;
     for (i = 0; i < an->child_count; i += 2) {
       if (STR_EQ(":freq", an->children[i].name)) {
