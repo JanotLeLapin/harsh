@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <sndfile.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -8,10 +9,48 @@
 #include "harsh.h"
 
 int
+h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t sample_count, size_t buf_size)
+{
+  float *buf;
+  h_graph_node_t *out;
+  SF_INFO sfinfo;
+  SNDFILE *f;
+  size_t i;
+
+  buf = malloc(sizeof(float) * buf_size);
+
+  out = h_hm_get(g, "output");
+
+  sfinfo.frames = sample_count;
+  sfinfo.samplerate = ctx->sr;
+  sfinfo.channels = 1;
+  sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
+
+  f = sf_open(filename, SFM_WRITE, &sfinfo);
+  if (0 == f) {
+    fprintf(stderr, "sf_open: could not open file\n");
+    return -1;
+  }
+
+  while (ctx->current_frame < sample_count) {
+    for (i = 0; i < buf_size; i++) {
+      h_graph_process_node(g, out, ctx);
+      buf[i] = out->out;
+    }
+    sf_write_float(f, buf, buf_size);
+    ctx->current_frame++;
+  }
+
+  sf_close(f);
+  free(buf);
+
+  return 0;
+}
+
+int
 main(void)
 {
   h_hm_t graph;
-  h_graph_node_t *out;
   int fd;
   size_t len;
   void *src;
@@ -26,15 +65,10 @@ main(void)
   munmap(src, len);
   close(fd);
 
-  out = h_hm_get(&graph, "output");
-
   ctx.current_frame = 0;
   ctx.sr = 44100;
 
-  for (ctx.current_frame = 0; ctx.current_frame < 100; ctx.current_frame++) {
-    h_graph_process_node(&graph, out, &ctx);
-    printf("current sample: %f\n", out->out);
-  }
+  h_graph_render_wav32("out.wav", &graph, &ctx, 512 * 10, 512);
 
   h_hm_free(&graph);
 

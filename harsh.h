@@ -103,6 +103,7 @@ void h_hm_free(h_hm_t *hm);
 
 /* dsp */
 void h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx);
+int h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t sample_count, size_t buf_size);
 
 /* dsl */
 void h_dsl_load(h_hm_t *g, const char *src, size_t src_len);
