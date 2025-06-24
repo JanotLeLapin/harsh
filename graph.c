@@ -205,6 +205,18 @@ h_graph_preview(h_hm_t *g)
 }
 
 void
+h_graph_render_block(h_hm_t *g, h_graph_node_t *out, h_context *ctx, float *buf, size_t buf_size)
+{
+  size_t i;
+
+  for (i = 0; i < buf_size; i++) {
+    h_graph_process_node(g, out, ctx);
+    buf[i] = out->out;
+    ctx->current_frame++;
+  }
+}
+
+void
 h_graph_free(h_hm_t *g)
 {
   size_t i;
