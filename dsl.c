@@ -4,7 +4,7 @@
 
 #include "harsh.h"
 
-#define STR_EQ(expected, actual, length) (!strncmp(expected, actual.p, length) && length == actual.len)
+#define STR_EQ(expected, actual) (!strncmp(expected, actual.p, sizeof(expected) - 1) && sizeof(expected) - 1 == actual.len)
 
 typedef struct {
   const char *src;
@@ -122,32 +122,32 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count)
   gn.out = 0.0f;
   gn.last_frame = 0;
 
-  if (STR_EQ("ref", an->name, 3)) {
+  if (STR_EQ("ref", an->name)) {
     memcpy(gn.name, an->children[0].name.p, an->children[0].name.len);
     gn.name[an->children[0].name.len] = '\0';
     inserted = h_hm_get(g, gn.name);
     return inserted;
-  } else if (STR_EQ("*", an->name, 1)) {
+  } else if (STR_EQ("*", an->name)) {
     gn.type = H_NODE_MATH;
     gn.data.math.op = H_NODE_MATH_MUL;
     gn.data.math.left = graph_expr_from_ast_put(g, &an->children[0], elem_count)->name;
     gn.data.math.right = graph_expr_from_ast_put(g, &an->children[1], elem_count)->name;
-  } else if (STR_EQ("noise", an->name, 5)) {
+  } else if (STR_EQ("noise", an->name)) {
     gn.type = H_NODE_NOISE;
     for (i = 0; i < an->child_count; i += 2) {
-      if (STR_EQ(":seed", an->children[i].name, 5)) {
+      if (STR_EQ(":seed", an->children[i].name)) {
         gn.data.noise.state = 1;
         gn.data.noise.seed = graph_expr_from_ast_put(g, &an->children[i + 1], elem_count)->name;
       }
     }
-  } else if (STR_EQ("sine", an->name, 4)) {
+  } else if (STR_EQ("sine", an->name)) {
     gn.type = H_NODE_OSC;
     gn.data.osc.type = H_NODE_OSC_SINE;
     gn.data.osc.current = 0.0f;
     for (i = 0; i < an->child_count; i += 2) {
-      if (STR_EQ(":freq", an->children[i].name, 5)) {
+      if (STR_EQ(":freq", an->children[i].name)) {
         ptr = &gn.data.osc.freq;
-      } else if (STR_EQ(":phase", an->children[i].name, 6)) {
+      } else if (STR_EQ(":phase", an->children[i].name)) {
         ptr = &gn.data.osc.phase;
       } else {
         continue;
@@ -171,7 +171,7 @@ graph_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count)
 {
   h_graph_node_t *gn;
 
-  if (STR_EQ("def", an->name, 3)) {
+  if (STR_EQ("def", an->name)) {
     gn = graph_expr_from_ast(g, &an->children[1], elem_count);
     memcpy(gn->name, an->children[0].name.p, an->children[0].name.len);
     gn->name[an->children[0].name.len] = '\0';
