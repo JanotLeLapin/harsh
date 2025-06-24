@@ -18,6 +18,10 @@ h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t sam
   size_t i;
 
   buf = malloc(sizeof(float) * buf_size);
+  if (0 == buf) {
+    perror("malloc");
+    return -1;
+  }
 
   out = h_hm_get(g, "output");
 
@@ -68,10 +72,11 @@ main(void)
   ctx.current_frame = 0;
   ctx.sr = 44100;
 
-  h_graph_render_wav32("out.wav", &graph, &ctx, 512 * 10, 512);
+  if (-1 == h_graph_render_wav32("out.wav", &graph, &ctx, 512 * 1000, 512)) {
+    fprintf(stderr, "could not render graph\n");
+  }
 
   h_graph_free(&graph);
 
-  printf("hello, world!\n");
   return 0;
 }
