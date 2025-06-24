@@ -100,8 +100,7 @@ process_bitcrush_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_bitcrush_t *data = &node->data.bitcrush;
   h_graph_node_t *input, *target_freq, *bits;
-  uint32_t encoded;
-  unsigned char bits_value;
+  float levels, norm, quantized;
 
   input = h_hm_get(g, data->input);
   target_freq = h_hm_get(g, data->target_freq);
@@ -110,16 +109,21 @@ process_bitcrush_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   h_graph_process_node(g, target_freq, ctx);
   h_graph_process_node(g, bits, ctx);
 
-  bits_value = (unsigned char) roundf(bits->out);
-
   data->current_freq += target_freq->out;
   if (data->current_freq < ctx->sr) {
     return;
   }
-
   data->current_freq -= ctx->sr;
-  encoded = ((uint32_t) (((input->out + 1) * 0.5) * UINT32_MAX)) >> (32 - bits_value);
-  node->out = ((float) (encoded << (32 - bits_value)) / UINT32_MAX) * 2 - 1;
+
+  levels = powf(2.0f, bits->out);
+  if (levels <= 1.0f) {
+    node->out = 0.0f;
+    return;
+  }
+
+  norm = (input->out + 1.0f) * 0.5f;
+  quantized = floorf(norm * levels) / (levels - 1.0f);
+  node->out = quantized * 2.0f - 1.0f;
 }
 
 void
