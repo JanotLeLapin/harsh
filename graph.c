@@ -113,9 +113,11 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
 {
   char margin[32];
 
-  memset(margin, ' ', depth);
-  margin[depth] = '\0';
-  fprintf(stderr, "%s%s%s ", margin, prefix, node->name);
+  margin[0] = '|';
+
+  memset(margin + 1, '-', (depth + 1) * 2);
+  margin[(depth + 1) * 2] = '\0';
+  fprintf(stderr, "%s %s%s ", margin, prefix, node->name);
 
   switch (node->type) {
   case H_NODE_VALUE:
