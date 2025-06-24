@@ -1,4 +1,6 @@
 #include <math.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "harsh.h"
 
@@ -75,6 +77,39 @@ h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   }
 
   node->last_frame = ctx->current_frame;
+}
+
+inline static void
+graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
+{
+  char margin[32];
+  size_t i;
+
+  memset(margin, ' ', depth);
+  margin[depth] = '\0';
+  fprintf(stderr, "%s%s%s ", margin, prefix, node->name);
+
+  switch (node->type) {
+  case H_NODE_VALUE:
+    fprintf(stderr, "(literal %f)\n", node->out);
+    break;
+  case H_NODE_MATH:
+    fprintf(stderr, "(math)\n");
+    graph_preview("left:", g, h_hm_get(g, node->data.math.left), depth + 1);
+    graph_preview("right:", g, h_hm_get(g, node->data.math.right), depth + 1);
+    break;
+  case H_NODE_OSC:
+    fprintf(stderr, "(osc)\n");
+    graph_preview("freq:", g, h_hm_get(g, node->data.osc.freq), depth + 1);
+    graph_preview("phase:", g, h_hm_get(g, node->data.osc.phase), depth + 1);
+    break;
+  }
+}
+
+void
+h_graph_preview(h_hm_t *g)
+{
+  graph_preview("", g, h_hm_get(g, "output"), 0);
 }
 
 void
