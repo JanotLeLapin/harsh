@@ -52,7 +52,7 @@ h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t sam
 }
 
 int
-main(void)
+main(int argc, char **argv)
 {
   h_hm_t graph;
   int fd;
@@ -60,7 +60,19 @@ main(void)
   void *src;
   h_context ctx;
 
-  fd = open("example.scm", O_RDONLY);
+  char *filename;
+
+  if (argc < 2) {
+    filename = "example.scm";
+  } else {
+    filename = argv[1];
+  }
+
+  fd = open(filename, O_RDONLY);
+  if (-1 == fd) {
+    perror("open");
+    return -1;
+  }
   len = lseek(fd, 0, SEEK_END);
   src = mmap(0, len, PROT_READ, MAP_PRIVATE, fd, 0);
 
