@@ -18,6 +18,7 @@ typedef struct {
 } src_string_t;
 
 typedef struct ast_node_s {
+  src_string_t plain;
   src_string_t name;
   size_t child_count;
   struct ast_node_s *children;
@@ -44,6 +45,9 @@ parse_node(ast_node_t *node, parser_ctx_t *ctx)
   while (is_whitespace(ctx->src[ctx->i])) {
     ctx->i++;
   }
+
+  node->plain.p = ctx->src + ctx->i;
+
   ctx->i++;
   node->name.p = ctx->src + ctx->i;
   while (!is_whitespace(ctx->src[ctx->i])) {
@@ -62,6 +66,7 @@ parse_node(ast_node_t *node, parser_ctx_t *ctx)
     switch (ctx->src[ctx->i]) {
     case ')':
       ctx->i++;
+      node->plain.len = ctx->src + ctx->i - node->plain.p;
       return;
     case '(':
       parse_node(&node->children[node->child_count], ctx);
