@@ -18,6 +18,7 @@ document.querySelector('#app').innerHTML = `
     </div>
     <div class="card" id="audio">
       <button>Generate</button>
+      <canvas width="1024px" height="256px"></canvas>
     </div>
     <p class="read-the-docs">
       Click on the Vite logo to learn more
