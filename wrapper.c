@@ -8,6 +8,14 @@
   }
 
 EXPORT_SIZE(h_hm_t)
+EXPORT_SIZE(h_context)
+
+void
+w_context_init(h_context *ctx, float sr)
+{
+  ctx->current_frame = 0;
+  ctx->sr = sr;
+}
 
 void
 w_graph_render_block(h_hm_t *g, const char *out, h_context *ctx, float *buf, size_t buf_size)
