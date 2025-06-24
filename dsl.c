@@ -99,10 +99,22 @@ free_node(ast_node_t *node)
   }
 }
 
-static char *
+static h_graph_node_t *graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count);
+
+static inline h_graph_node_t *
+graph_expr_from_ast_put(h_hm_t *g, ast_node_t *an, size_t *elem_count)
+{
+  h_graph_node_t *gn;
+
+  gn = graph_expr_from_ast(g, an, elem_count);
+  h_hm_put(g, gn->name, gn);
+  return gn;
+}
+
+static h_graph_node_t *
 graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count)
 {
-  h_graph_node_t gn, *inserted;
+  h_graph_node_t gn, *inserted, *child;
   char tmp[8], **ptr;
   size_t i;
 
@@ -114,12 +126,12 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count)
     memcpy(gn.name, an->children[0].name.p, an->children[0].name.len);
     gn.name[an->children[0].name.len] = '\0';
     inserted = h_hm_get(g, gn.name);
-    return inserted->name;
+    return inserted;
   } else if (STR_EQ("*", an->name, 1)) {
     gn.type = H_NODE_MATH;
     gn.data.math.op = H_NODE_MATH_MUL;
-    gn.data.math.left = graph_expr_from_ast(g, &an->children[0], elem_count);
-    gn.data.math.right = graph_expr_from_ast(g, &an->children[1], elem_count);
+    gn.data.math.left = graph_expr_from_ast_put(g, &an->children[0], elem_count)->name;
+    gn.data.math.right = graph_expr_from_ast_put(g, &an->children[1], elem_count)->name;
   } else if (STR_EQ("sine", an->name, 4)) {
     gn.type = H_NODE_OSC;
     gn.data.osc.type = H_NODE_OSC_SINE;
@@ -132,7 +144,7 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count)
       } else {
         continue;
       }
-      *ptr = graph_expr_from_ast(g, &an->children[i + 1], elem_count);
+      *ptr = graph_expr_from_ast_put(g, &an->children[i + 1], elem_count)->name;
     }
   } else {
     gn.type = H_NODE_VALUE;
@@ -143,25 +155,21 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count)
 
   inserted = malloc(sizeof(h_graph_node_t));
   memcpy(inserted, &gn, sizeof(h_graph_node_t));
-  h_hm_put(g, inserted->name, inserted);
-  return inserted->name;
+  return inserted;
 }
 
 static void
 graph_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count)
 {
-  h_graph_node_t gn, *inserted;
-  char *key;
+  h_graph_node_t *gn;
 
   if (STR_EQ("def", an->name, 3)) {
-    key = graph_expr_from_ast(g, &an->children[1], elem_count);
-    inserted = h_hm_get(g, key);
-    h_hm_remove(g, key);
-    memcpy(inserted->name, an->children[0].name.p, an->children[0].name.len);
-    inserted->name[an->children[0].name.len] = '\0';
-    h_hm_put(g, inserted->name, inserted);
+    gn = graph_expr_from_ast(g, &an->children[1], elem_count);
+    memcpy(gn->name, an->children[0].name.p, an->children[0].name.len);
+    gn->name[an->children[0].name.len] = '\0';
+    h_hm_put(g, gn->name, gn);
   } else {
-    graph_expr_from_ast(g, an, elem_count);
+    graph_expr_from_ast_put(g, an, elem_count);
   }
 }
 
