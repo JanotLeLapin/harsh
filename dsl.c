@@ -273,6 +273,9 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
       }
       *ptr = graph_expr_from_ast_put(g, h_vec_get(&an->children, i + 1), elem_count, ctx)->name;
     }
+  } else if (STR_EQ("diode", an->name)) {
+    gn.type = H_NODE_DIODE;
+    gn.data.diode = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx)->name;
   } else if (STR_EQ("bitcrush", an->name)) {
     child = h_vec_get(&an->children, 0);
     gn.type = H_NODE_BITCRUSH;

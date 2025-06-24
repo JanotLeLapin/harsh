@@ -85,6 +85,17 @@ process_osc_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 }
 
 static inline void
+process_diode_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
+{
+  h_graph_node_t *input;
+
+  input = h_hm_get(g, node->data.diode);
+  h_graph_process_node(g, input, ctx);
+
+  node->out = log1pf(expf(input->out));
+}
+
+static inline void
 process_bitcrush_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_bitcrush_t *data = &node->data.bitcrush;
@@ -130,6 +141,9 @@ h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   case H_NODE_OSC:
     process_osc_node(g, node, ctx);
     break;
+  case H_NODE_DIODE:
+    process_diode_node(g, node, ctx);
+    break;
   case H_NODE_BITCRUSH:
     process_bitcrush_node(g, node, ctx);
     break;
@@ -166,6 +180,10 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
     fprintf(stderr, "(osc)\n");
     graph_preview("freq:", g, h_hm_get(g, node->data.osc.freq), depth + 1);
     graph_preview("phase:", g, h_hm_get(g, node->data.osc.phase), depth + 1);
+    break;
+  case H_NODE_DIODE:
+    fprintf(stderr, "(diode)\n");
+    graph_preview("input:", g, h_hm_get(g, node->data.diode), depth + 1);
     break;
   case H_NODE_BITCRUSH:
     fprintf(stderr, "(bitcrush)\n");
