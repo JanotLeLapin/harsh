@@ -6,6 +6,12 @@
 
 #define STR_EQ(expected, actual) (!strncmp(expected, actual.p, sizeof(expected) - 1) && sizeof(expected) - 1 == actual.len)
 
+#define COLOR_RESET "\x1b[0m"
+#define COLOR_RED "\x1b[31m"
+#define COLOR_YELLOW "\x1b[33m"
+#define COLOR_GREEN "\x1b[32m"
+#define COLOR_BLUE "\x1b[36m"
+
 typedef struct {
   const char *src;
   size_t src_len;
@@ -35,6 +41,70 @@ is_whitespace(char c)
   default:
     return 0;
   }
+}
+
+typedef enum {
+  MESSAGE_INFO,
+  MESSAGE_WARN,
+  MESSAGE_ERROR,
+} message_severity_t;
+
+static void
+log_message(const ast_node_t *node, src_string_t *highlight, message_severity_t severity, const parser_ctx_t *ctx)
+{
+  char buf[256], *p, c, *fmt;
+  size_t i, len;
+
+  p = buf;
+  *p++ = '|';
+  *p++ = '-';
+  *p++ = '\n';
+  *p++ = '|';
+  *p++ = ' ';
+
+  for (i = 0; i < node->plain.len; i++) {
+    c = *(node->plain.p + i);
+    if (0 != highlight) {
+      if (highlight->p == node->plain.p + i) {
+        switch (severity) {
+        case MESSAGE_INFO:
+          fmt = COLOR_BLUE;
+          len = sizeof(COLOR_BLUE);
+          break;
+        case MESSAGE_WARN:
+          fmt = COLOR_YELLOW;
+          len = sizeof(COLOR_YELLOW);
+          break;
+        case MESSAGE_ERROR:
+          fmt = COLOR_RED;
+          len = sizeof(COLOR_RED);
+          break;
+        }
+        memcpy(p, fmt, len - 1);
+        p += len - 1;
+      } else if (highlight->p + highlight->len == node->plain.p + i) {
+        memcpy(p, COLOR_RESET, sizeof(COLOR_RESET) - 1);
+        p += sizeof(COLOR_RESET) - 1;
+      }
+    }
+    *p++ = c;
+    switch (c) {
+    case '\n':
+      *p++ = '|';
+      *p++ = ' ';
+      break;
+    default:
+      break;
+    }
+  }
+
+  *p++ = '\n';
+  *p++ = '|';
+  *p++ = '-';
+  *p++ = ' ';
+  *p++ = '\0';
+
+  fprintf(stderr, "%s", buf);
 }
 
 static void
@@ -78,10 +148,12 @@ parse_node(ast_node_t *node, parser_ctx_t *ctx)
 
     child = &node->children[node->child_count];
     child->name.p = ctx->src + ctx->i;
+    child->plain.p = child->name.p;
     while (!is_whitespace(ctx->src[ctx->i]) && ')' != ctx->src[ctx->i]) {
       ctx->i++;
     }
     child->name.len = ctx->src + ctx->i - child->name.p;
+    child->plain.len = child->name.len;
 
     child->children = 0;
     child->child_count = 0;
@@ -104,20 +176,20 @@ free_node(ast_node_t *node)
   }
 }
 
-static h_graph_node_t *graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count);
+static h_graph_node_t *graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_ctx_t *ctx);
 
 static inline h_graph_node_t *
-graph_expr_from_ast_put(h_hm_t *g, ast_node_t *an, size_t *elem_count)
+graph_expr_from_ast_put(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_ctx_t *ctx)
 {
   h_graph_node_t *gn;
 
-  gn = graph_expr_from_ast(g, an, elem_count);
+  gn = graph_expr_from_ast(g, an, elem_count, ctx);
   h_hm_put(g, gn->name, gn);
   return gn;
 }
 
 static h_graph_node_t *
-graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count)
+graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_ctx_t *ctx)
 {
   h_graph_node_t gn, *inserted;
   char tmp[8], **ptr;
@@ -135,14 +207,14 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count)
   } else if (STR_EQ("*", an->name)) {
     gn.type = H_NODE_MATH;
     gn.data.math.op = H_NODE_MATH_MUL;
-    gn.data.math.left = graph_expr_from_ast_put(g, &an->children[0], elem_count)->name;
-    gn.data.math.right = graph_expr_from_ast_put(g, &an->children[1], elem_count)->name;
+    gn.data.math.left = graph_expr_from_ast_put(g, &an->children[0], elem_count, ctx)->name;
+    gn.data.math.right = graph_expr_from_ast_put(g, &an->children[1], elem_count, ctx)->name;
   } else if (STR_EQ("noise", an->name)) {
     gn.type = H_NODE_NOISE;
     for (i = 0; i < an->child_count; i += 2) {
       if (STR_EQ(":seed", an->children[i].name)) {
         gn.data.noise.state = 1;
-        gn.data.noise.seed = graph_expr_from_ast_put(g, &an->children[i + 1], elem_count)->name;
+        gn.data.noise.seed = graph_expr_from_ast_put(g, &an->children[i + 1], elem_count, ctx)->name;
       }
     }
   } else if (STR_EQ("sine", an->name)) {
@@ -155,9 +227,11 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count)
       } else if (STR_EQ(":phase", an->children[i].name)) {
         ptr = &gn.data.osc.phase;
       } else {
+        log_message(an, &an->children[i].plain, MESSAGE_WARN, ctx);
+        fprintf(stderr, "unexpected argument for osc: '%.*s'\n", (int) an->children[i].plain.len - 1, an->children[i].plain.p + 1);
         continue;
       }
-      *ptr = graph_expr_from_ast_put(g, &an->children[i + 1], elem_count)->name;
+      *ptr = graph_expr_from_ast_put(g, &an->children[i + 1], elem_count, ctx)->name;
     }
   } else {
     gn.type = H_NODE_VALUE;
@@ -172,17 +246,17 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count)
 }
 
 static void
-graph_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count)
+graph_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_ctx_t *ctx)
 {
   h_graph_node_t *gn;
 
   if (STR_EQ("def", an->name)) {
-    gn = graph_expr_from_ast(g, &an->children[1], elem_count);
+    gn = graph_expr_from_ast(g, &an->children[1], elem_count, ctx);
     memcpy(gn->name, an->children[0].name.p, an->children[0].name.len);
     gn->name[an->children[0].name.len] = '\0';
     h_hm_put(g, gn->name, gn);
   } else {
-    graph_expr_from_ast_put(g, an, elem_count);
+    graph_expr_from_ast_put(g, an, elem_count, ctx);
   }
 }
 
@@ -198,7 +272,7 @@ h_dsl_load(h_hm_t *g, const char *src, size_t src_len)
 
   parse_node(&root, &ctx);
   for (i = 0; i < root.child_count; i++) {
-    graph_from_ast(g, &root.children[i], &elem_count);
+    graph_from_ast(g, &root.children[i], &elem_count, &ctx);
   }
   free_node(&root);
 }
