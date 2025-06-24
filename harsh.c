@@ -72,6 +72,8 @@ main(void)
   ctx.current_frame = 0;
   ctx.sr = 44100;
 
+  h_graph_preview(&graph);
+
   if (-1 == h_graph_render_wav32("out.wav", &graph, &ctx, 512 * 1000, 512)) {
     fprintf(stderr, "could not render graph\n");
   }
