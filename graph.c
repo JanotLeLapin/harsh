@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -23,6 +24,31 @@ process_math_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
     node->out = left->out * right->out;
     break;
   }
+}
+
+static inline uint32_t
+xorshift32(uint32_t *state)
+{
+  uint32_t x = *state;
+  x ^= x << 13;
+  x ^= x >> 17;
+  x ^= x << 5;
+  return *state = x;
+}
+
+static inline void
+process_noise_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
+{
+  h_node_noise_t *data = &node->data.noise;
+  h_graph_node_t *seed;
+
+  seed = h_hm_get(g, data->seed);
+  h_graph_process_node(g, seed, ctx);
+  data->state ^= (unsigned int) seed->out;
+
+  float u1 = ((float) xorshift32(&data->state) + 1.0f) / ((float) UINT32_MAX + 2.0f);
+  float u2 = ((float) xorshift32(&data->state) + 1.0f) / ((float) UINT32_MAX + 2.0f);
+  node->out = sqrtf(-2.0f * logf(u1)) * cosf(2.0f * M_PI * u2);
 }
 
 static inline void
@@ -71,6 +97,9 @@ h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   case H_NODE_MATH:
     process_math_node(g, node, ctx);
     break;
+  case H_NODE_NOISE:
+    process_noise_node(g, node, ctx);
+    break;
   case H_NODE_OSC:
     process_osc_node(g, node, ctx);
     break;
@@ -97,6 +126,10 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
     fprintf(stderr, "(math)\n");
     graph_preview("left:", g, h_hm_get(g, node->data.math.left), depth + 1);
     graph_preview("right:", g, h_hm_get(g, node->data.math.right), depth + 1);
+    break;
+  case H_NODE_NOISE:
+    fprintf(stderr, "(noise)\n");
+    graph_preview("seed:", g, h_hm_get(g, node->data.noise.seed), depth + 1);
     break;
   case H_NODE_OSC:
     fprintf(stderr, "(osc)\n");

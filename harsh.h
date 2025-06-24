@@ -42,6 +42,11 @@ typedef struct {
 } h_node_math_t;
 
 typedef struct {
+  unsigned int state;
+  char *seed;
+} h_node_noise_t;
+
+typedef struct {
   enum {
     H_NODE_OSC_SINE,
     H_NODE_OSC_SQUARE,
@@ -56,6 +61,7 @@ typedef enum {
   H_NODE_VALUE,
   H_NODE_MATH,
 
+  H_NODE_NOISE,
   H_NODE_OSC,
 } h_graph_node_type_t;
 
@@ -63,6 +69,7 @@ typedef union {
   h_node_value_t value;
   h_node_math_t math;
 
+  h_node_noise_t noise;
   h_node_osc_t osc;
 } h_graph_node_data_t;
 

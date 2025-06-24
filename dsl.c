@@ -132,6 +132,14 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count)
     gn.data.math.op = H_NODE_MATH_MUL;
     gn.data.math.left = graph_expr_from_ast_put(g, &an->children[0], elem_count)->name;
     gn.data.math.right = graph_expr_from_ast_put(g, &an->children[1], elem_count)->name;
+  } else if (STR_EQ("noise", an->name, 5)) {
+    gn.type = H_NODE_NOISE;
+    for (i = 0; i < an->child_count; i += 2) {
+      if (STR_EQ(":seed", an->children[i].name, 5)) {
+        gn.data.noise.state = 1;
+        gn.data.noise.seed = graph_expr_from_ast_put(g, &an->children[i + 1], elem_count)->name;
+      }
+    }
   } else if (STR_EQ("sine", an->name, 4)) {
     gn.type = H_NODE_OSC;
     gn.data.osc.type = H_NODE_OSC_SINE;
