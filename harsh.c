@@ -36,9 +36,9 @@ h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t sam
     for (i = 0; i < buf_size; i++) {
       h_graph_process_node(g, out, ctx);
       buf[i] = out->out;
+      ctx->current_frame++;
     }
     sf_write_float(f, buf, buf_size);
-    ctx->current_frame++;
   }
 
   sf_close(f);
