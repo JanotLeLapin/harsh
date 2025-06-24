@@ -76,7 +76,7 @@ process_osc_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
     if (data->current < 0.0f) data->current += 1.0f;
     break;
   case H_NODE_OSC_SAWTOOTH:
-    node->out = (1.0f - 2.0f * phase->out);
+    node->out = (1.0f - 2.0f + phase->out);
     data->current += freq->out / ctx->sr;
     data->current = fmodf(data->current, 1.0f);
     if (data->current < 0.0f) data->current += 1.0f;
