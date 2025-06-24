@@ -57,12 +57,21 @@ typedef struct {
   char *phase;
 } h_node_osc_t;
 
+typedef struct {
+  float current_freq;
+  char *input;
+  char *target_freq;
+  char *bits;
+} h_node_bitcrush_t;
+
 typedef enum {
   H_NODE_VALUE,
   H_NODE_MATH,
 
   H_NODE_NOISE,
   H_NODE_OSC,
+
+  H_NODE_BITCRUSH,
 } h_graph_node_type_t;
 
 typedef union {
@@ -71,6 +80,8 @@ typedef union {
 
   h_node_noise_t noise;
   h_node_osc_t osc;
+
+  h_node_bitcrush_t bitcrush;
 } h_graph_node_data_t;
 
 typedef struct {
