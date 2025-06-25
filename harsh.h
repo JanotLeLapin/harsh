@@ -48,6 +48,19 @@ typedef struct {
 } h_node_math_t;
 
 typedef struct {
+  enum {
+    H_NODE_CMP_LT,
+    H_NODE_CMP_LEQT,
+    H_NODE_CMP_GT,
+    H_NODE_CMP_GEQT,
+    H_NODE_CMP_EQ,
+    H_NODE_CMP_NEQ,
+  } op;
+  char *left;
+  char *right;
+} h_node_cmp_t;
+
+typedef struct {
   unsigned int state;
   char *seed;
 } h_node_noise_t;
@@ -75,6 +88,7 @@ typedef struct {
 typedef enum {
   H_NODE_VALUE,
   H_NODE_MATH,
+  H_NODE_CMP,
 
   H_NODE_NOISE,
   H_NODE_OSC,
@@ -87,6 +101,7 @@ typedef enum {
 typedef union {
   h_node_value_t value;
   h_node_math_t math;
+  h_node_cmp_t cmp;
 
   h_node_noise_t noise;
   h_node_osc_t osc;

@@ -35,6 +35,42 @@ process_math_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   }
 }
 
+static inline void
+process_cmp_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
+{
+  h_node_cmp_t data = node->data.cmp;
+  h_graph_node_t *left, *right;
+  char res;
+
+  left = h_hm_get(g, data.left);
+  right = h_hm_get(g, data.right);
+  h_graph_process_node(g, left, ctx);
+  h_graph_process_node(g, right, ctx);
+
+  switch (data.op) {
+  case H_NODE_CMP_LT:
+    res = left->out < right->out;
+    break;
+  case H_NODE_CMP_LEQT:
+    res = left->out <= right->out;
+    break;
+  case H_NODE_CMP_GT:
+    res = left->out > right->out;
+    break;
+  case H_NODE_CMP_GEQT:
+    res = left->out >= right->out;
+    break;
+  case H_NODE_CMP_EQ:
+    res = left->out == right->out;
+    break;
+  case H_NODE_CMP_NEQ:
+    res = left->out != right->out;
+    break;
+  }
+
+  node->out = res ? 1.0f : 0.0f;
+}
+
 static inline uint32_t
 xorshift32(uint32_t *state)
 {
@@ -148,6 +184,9 @@ h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   case H_NODE_MATH:
     process_math_node(g, node, ctx);
     break;
+  case H_NODE_CMP:
+    process_cmp_node(g, node, ctx);
+    break;
   case H_NODE_NOISE:
     process_noise_node(g, node, ctx);
     break;
@@ -186,6 +225,11 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
     for (i = 0; i < node->data.math.values.size; i++) {
       graph_preview("elem:", g, h_hm_get(g, *((char **) h_vec_get(&node->data.math.values, i))), depth + 1);
     }
+    break;
+  case H_NODE_CMP:
+    fprintf(stderr, "(cmp)\n");
+    graph_preview("left:", g, h_hm_get(g, node->data.cmp.left), depth + 1);
+    graph_preview("right:", g, h_hm_get(g, node->data.cmp.right), depth + 1);
     break;
   case H_NODE_NOISE:
     fprintf(stderr, "(noise)\n");
