@@ -228,14 +228,7 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
     return inserted;
   } else if (-1 != (res = str_arr_includes(OP_MATH, an->name))) {
     gn.type = H_NODE_MATH;
-    switch (res) {
-    case 0:
-      gn.data.math.op = H_NODE_MATH_ADD;
-      break;
-    case 1:
-      gn.data.math.op = H_NODE_MATH_MUL;
-      break;
-    }
+    gn.data.math.op = res;
     h_vec_init(&gn.data.math.values, 2, sizeof(char **));
     for (i = 0; i < an->children.size; i++) {
       node = graph_expr_from_ast_put(g, h_vec_get(&an->children, i), elem_count, ctx);
@@ -244,26 +237,7 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
     }
   } else if (-1 != (res = str_arr_includes(OP_CMP, an->name))) {
     gn.type = H_NODE_CMP;
-    switch (res) {
-    case 0:
-      gn.data.cmp.op = H_NODE_CMP_LT;
-      break;
-    case 1:
-      gn.data.cmp.op = H_NODE_CMP_LEQT;
-      break;
-    case 2:
-      gn.data.cmp.op = H_NODE_CMP_GT;
-      break;
-    case 3:
-      gn.data.cmp.op = H_NODE_CMP_GEQT;
-      break;
-    case 4:
-      gn.data.cmp.op = H_NODE_CMP_EQ;
-      break;
-    case 5:
-      gn.data.cmp.op = H_NODE_CMP_NEQ;
-      break;
-    }
+    gn.data.cmp.op = res;
     gn.data.cmp.left = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx)->name;
     gn.data.cmp.right = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count, ctx)->name;
   } else if (STR_EQ("noise", an->name)) {
@@ -277,17 +251,7 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
     }
   } else if (-1 != (res = str_arr_includes(OP_OSC, an->name))) {
     gn.type = H_NODE_OSC;
-    switch (res) {
-    case 0:
-      gn.data.osc.type = H_NODE_OSC_SINE;
-      break;
-    case 1:
-      gn.data.osc.type = H_NODE_OSC_SQUARE;
-      break;
-    case 2:
-      gn.data.osc.type = H_NODE_OSC_SAWTOOTH;
-      break;
-    }
+    gn.data.osc.type = res;
     gn.data.osc.current = 0.0f;
     for (i = 0; i < an->children.size; i += 2) {
       child = h_vec_get(&an->children, i);

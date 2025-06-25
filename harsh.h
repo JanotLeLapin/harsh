@@ -41,7 +41,7 @@ typedef void *h_node_value_t;
 
 typedef struct {
   enum {
-    H_NODE_MATH_ADD,
+    H_NODE_MATH_ADD = 0,
     H_NODE_MATH_MUL,
   } op;
   h_vec_t values;
@@ -49,7 +49,7 @@ typedef struct {
 
 typedef struct {
   enum {
-    H_NODE_CMP_LT,
+    H_NODE_CMP_LT = 0,
     H_NODE_CMP_LEQT,
     H_NODE_CMP_GT,
     H_NODE_CMP_GEQT,
@@ -67,7 +67,7 @@ typedef struct {
 
 typedef struct {
   enum {
-    H_NODE_OSC_SINE,
+    H_NODE_OSC_SINE = 0,
     H_NODE_OSC_SQUARE,
     H_NODE_OSC_SAWTOOTH,
   } type;
