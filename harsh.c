@@ -2,6 +2,7 @@
 #include <sndfile.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include <sys/mman.h>
@@ -52,9 +53,10 @@ main(int argc, char **argv)
 {
   h_hm_t graph;
   int fd;
-  size_t len;
+  size_t len, sample_count = 512 * 1000;
   void *src;
   h_context ctx;
+  clock_t start, end;
 
   char *filename;
 
@@ -82,11 +84,15 @@ main(int argc, char **argv)
 
   h_graph_preview(&graph);
 
+  start = clock();
   if (-1 == h_graph_render_wav32("out.wav", &graph, &ctx, 512 * 1000, 512)) {
     fprintf(stderr, "could not render graph\n");
   }
+  end = clock();
 
   h_graph_free(&graph);
+
+  fprintf(stderr, "rendered %ld samples (%f seconds), took %fs.\n", sample_count, (float) sample_count / ctx.sr, (float) (end - start) / CLOCKS_PER_SEC);
 
   return 0;
 }
