@@ -61,7 +61,7 @@ export function setupAudio(element) {
   }
 
   async function initAudio() {
-    await audioCtx.audioWorklet.addModule('/harsh-processor.js')
+    await audioCtx.audioWorklet.addModule(import.meta.env.BASE_URL + '/harsh-processor.js')
     workletNode = new AudioWorkletNode(audioCtx, 'harsh-processor')
     workletNode.port.onmessage = (e) => {
       if (e.data.type === 'requestBlock') {
