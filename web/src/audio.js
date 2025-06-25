@@ -22,9 +22,7 @@ export function setupAudio(element) {
   (def output (bitcrush (diode (sine :freq 55.0 :phase 0.0)) :target_freq (ref target-freq) :bits (ref bits))))`
   */
 
-  let synth = `(synth
-    (def lfo (sine :freq 0.06 :phase 0.0))
-    (def output (sine :freq (+ 440.0 (* 220.0 (ref lfo))) :phase 0.0)))`
+  let synth;
 
   const samples = new Float32Array(BLOCK_SIZE)
 
@@ -116,6 +114,8 @@ export function setupAudio(element) {
   }
 
   element.querySelector('button').addEventListener('click', () => {
+    synth = element.querySelector('textarea').value
+
     if (harshCtx.graphPtr) {
       freeResources()
     }
