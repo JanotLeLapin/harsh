@@ -15,18 +15,49 @@ export function setupAudio(element) {
     renderBlock: undefined,
   }
 
+  /*
   let synth = `(synth
   (def target-freq (+ 8000.0 (* 4000.0 (sine :freq 0.1 :phase 0.0))))
   (def bits (* 8 0.5 (+ 1.2 (sine :freq 0.15 :phase 0.0))))
   (def output (bitcrush (diode (sine :freq 55.0 :phase 0.0)) :target_freq (ref target-freq) :bits (ref bits))))`
+  */
+
+  let synth = `(synth
+    (def lfo (sine :freq 0.06 :phase 0.0))
+    (def output (sine :freq (+ 440.0 (* 220.0 (ref lfo))) :phase 0.0)))`
+
+  const samples = new Float32Array(BLOCK_SIZE)
 
   console.log('setting up audio')
 
+  function drawSignal() {
+    const canvas = element.querySelector('canvas')
+    const ctx = canvas.getContext('2d')
+
+    ctx.beginPath()
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+
+    ctx.beginPath()
+    ctx.fillStyle = 'white'
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+
+    ctx.beginPath()
+    ctx.fillStyle = 'blue'
+    ctx.moveTo(0, CANVAS_HEIGHT / 2)
+    for (let i = 0; i < samples.length; i++) {
+      ctx.lineTo(
+        i / samples.length * CANVAS_WIDTH,
+        CANVAS_HEIGHT - ((samples[i] * 0.5 + 0.5) * CANVAS_HEIGHT),
+      )
+    }
+    ctx.stroke()
+  }
+
   function renderBlock() {
     harshCtx.renderBlock(harshCtx.graphPtr, harshCtx.outPtr, harshCtx.ctxPtr, harshCtx.bufPtr, BLOCK_SIZE)
-    const samples = new Float32Array(BLOCK_SIZE)
     samples.set(new Float32Array(window.Module.HEAPF32.buffer, harshCtx.bufPtr, BLOCK_SIZE))
     sendAudioBlock(samples)
+    drawSignal()
   }
 
   async function initAudio() {
@@ -93,21 +124,5 @@ export function setupAudio(element) {
     for (let i = 0; i < 4; i++) {
       renderBlock()
     }
-    // const canvas = element.querySelector('canvas')
-    // const ctx = canvas.getContext('2d')
-
-    // ctx.fillStyle = 'white'
-    // ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
-
-    // ctx.fillStyle = 'blue'
-    // ctx.moveTo(0, CANVAS_HEIGHT / 2)
-    // for (let i = 0; i < bufSize; i++) {
-    //   console.log(samples[i])
-    //   ctx.lineTo(
-    //     i / bufSize * CANVAS_WIDTH,
-    //     CANVAS_HEIGHT - ((samples[i] * 0.5 + 0.5) * CANVAS_HEIGHT),
-    //   )
-    // }
-    // ctx.stroke()
   })
 }
