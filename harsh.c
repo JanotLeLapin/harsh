@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <sndfile.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
@@ -53,17 +54,27 @@ main(int argc, char **argv)
 {
   h_hm_t graph;
   int fd;
-  size_t len, sample_count = 512 * 1000;
-  void *src;
+  size_t i, len, sample_count = 512 * 1000;
   h_context ctx;
+  void *src;
   clock_t start, end;
 
   char *filename;
 
   if (argc < 2) {
-    filename = "example.scm";
+    fprintf(stderr, "missing input file\n");
+    return -1;
   } else {
     filename = argv[1];
+  }
+
+  ctx.current_frame = 0;
+  ctx.sr = 44100.0f;
+
+  for (i = 2; i < argc; i++) {
+    if (!strcmp("--sample-rate", argv[i]) || !strcmp("-sr", argv[i])) {
+      ctx.sr = strtof(argv[++i], NULL);
+    }
   }
 
   fd = open(filename, O_RDONLY);
@@ -79,9 +90,6 @@ main(int argc, char **argv)
   munmap(src, len);
   close(fd);
 
-  ctx.current_frame = 0;
-  ctx.sr = 44100;
-
   h_graph_preview(&graph);
 
   start = clock();
@@ -92,7 +100,7 @@ main(int argc, char **argv)
 
   h_graph_free(&graph);
 
-  fprintf(stderr, "rendered %ld samples (%f seconds), took %fs.\n", sample_count, (float) sample_count / ctx.sr, (float) (end - start) / CLOCKS_PER_SEC);
+  fprintf(stderr, "rendered %ld samples (%f sample rate, %f seconds), took %fs.\n", sample_count, ctx.sr, (float) sample_count / ctx.sr, (float) (end - start) / CLOCKS_PER_SEC);
 
   return 0;
 }
