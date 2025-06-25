@@ -44,8 +44,7 @@ typedef struct {
     H_NODE_MATH_ADD,
     H_NODE_MATH_MUL,
   } op;
-  char *left;
-  char *right;
+  h_vec_t values;
 } h_node_math_t;
 
 typedef struct {

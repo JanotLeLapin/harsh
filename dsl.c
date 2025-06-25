@@ -209,9 +209,9 @@ str_arr_includes(const char **expected, src_string_t str)
 static h_graph_node_t *
 graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_ctx_t *ctx)
 {
-  h_graph_node_t gn, *inserted;
+  h_graph_node_t gn, *inserted, *node;
   ast_node_t *child;
-  char tmp[8], **ptr;
+  char tmp[8], **ptr, *name;
   int res;
   size_t i;
 
@@ -235,8 +235,12 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
       gn.data.math.op = H_NODE_MATH_MUL;
       break;
     }
-    gn.data.math.left = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx)->name;
-    gn.data.math.right = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count, ctx)->name;
+    h_vec_init(&gn.data.math.values, 2, sizeof(char **));
+    for (i = 0; i < an->children.size; i++) {
+      node = graph_expr_from_ast_put(g, h_vec_get(&an->children, i), elem_count, ctx);
+      name = node->name;
+      h_vec_push(&gn.data.math.values, &name);
+    }
   } else if (STR_EQ("noise", an->name)) {
     gn.type = H_NODE_NOISE;
     for (i = 0; i < an->children.size; i += 2) {

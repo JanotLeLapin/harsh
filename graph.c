@@ -9,20 +9,29 @@ static inline void
 process_math_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_math_t data = node->data.math;
-  h_graph_node_t *left, *right;
-
-  left = h_hm_get(g, data.left);
-  right = h_hm_get(g, data.right);
-  h_graph_process_node(g, left, ctx);
-  h_graph_process_node(g, right, ctx);
+  size_t i;
+  h_graph_node_t *elem;
 
   switch (data.op) {
   case H_NODE_MATH_ADD:
-    node->out = left->out + right->out;
+    node->out = 0.0f;
     break;
   case H_NODE_MATH_MUL:
-    node->out = left->out * right->out;
+    node->out = 1.0f;
     break;
+  }
+
+  for (i = 0; i < data.values.size; i++) {
+    elem = h_hm_get(g, *((char **) h_vec_get(&data.values, i)));
+    h_graph_process_node(g, elem, ctx);
+    switch (data.op) {
+    case H_NODE_MATH_ADD:
+      node->out += elem->out;
+      break;
+    case H_NODE_MATH_MUL:
+      node->out *= elem->out;
+      break;
+    }
   }
 }
 
@@ -160,6 +169,7 @@ inline static void
 graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
 {
   char margin[32];
+  size_t i;
 
   margin[0] = '|';
 
@@ -173,8 +183,9 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
     break;
   case H_NODE_MATH:
     fprintf(stderr, "(math)\n");
-    graph_preview("left:", g, h_hm_get(g, node->data.math.left), depth + 1);
-    graph_preview("right:", g, h_hm_get(g, node->data.math.right), depth + 1);
+    for (i = 0; i < node->data.math.values.size; i++) {
+      graph_preview("elem:", g, h_hm_get(g, *((char **) h_vec_get(&node->data.math.values, i))), depth + 1);
+    }
     break;
   case H_NODE_NOISE:
     fprintf(stderr, "(noise)\n");
@@ -221,11 +232,20 @@ h_graph_free(h_hm_t *g)
 {
   size_t i;
   h_hm_entry_t *entry;
+  h_graph_node_t *node;
 
   for (i = 0; i < g->capacity; i++) {
     entry = g->buckets[i];
     while (entry) {
-      free(entry->value);
+      node = entry->value;
+      switch (node->type) {
+      case H_NODE_MATH:
+        h_vec_free(&node->data.math.values);
+        break;
+      default:
+        break;
+      }
+      free(node);
       entry = entry->next;
     }
   }
