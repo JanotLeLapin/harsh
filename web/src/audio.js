@@ -116,13 +116,18 @@ export function setupAudio(element) {
   }
 
   element.querySelector('button').addEventListener('click', () => {
-    if (!harshCtx.graphPtr) {
-      allocateResources()
+    if (harshCtx.graphPtr) {
+      freeResources()
     }
-    initAudio().then(startAudio)
+
+    allocateResources()
+
+    startAudio()
 
     for (let i = 0; i < 4; i++) {
       renderBlock()
     }
   })
+
+  initAudio()
 }
