@@ -12,6 +12,7 @@ export function setupAudio(element) {
     outPtr: undefined,
     ctxPtr: undefined,
     bufPtr: undefined,
+    renderBlock: undefined,
   }
 
   let synth = `(synth
@@ -19,9 +20,21 @@ export function setupAudio(element) {
 
   console.log('setting up audio')
 
+  function renderBlock() {
+    harshCtx.renderBlock(harshCtx.graphPtr, harshCtx.outPtr, harshCtx.ctxPtr, harshCtx.bufPtr, BLOCK_SIZE)
+    const samples = new Float32Array(BLOCK_SIZE)
+    samples.set(new Float32Array(window.Module.HEAPF32.buffer, harshCtx.bufPtr, BLOCK_SIZE))
+    sendAudioBlock(samples)
+  }
+
   async function initAudio() {
     await audioCtx.audioWorklet.addModule('/harsh-processor.js')
     workletNode = new AudioWorkletNode(audioCtx, 'harsh-processor')
+    workletNode.port.onmessage = (e) => {
+      if (e.data.type === 'requestBlock') {
+        renderBlock()
+      }
+    }
     workletNode.connect(audioCtx.destination)
   }
 
@@ -38,6 +51,7 @@ export function setupAudio(element) {
   }
 
   function allocateResources() {
+    console.log('allocating')
     const hmSize = window.Module.ccall('w_h_hm_t_size', 'number')
     harshCtx.graphPtr = window.Module._malloc(hmSize)
 
@@ -56,6 +70,8 @@ export function setupAudio(element) {
     window.Module.ccall('w_context_init', null, ['number', 'number'], [harshCtx.ctxPtr, 44100])
 
     harshCtx.bufPtr = window.Module._malloc(4 * BLOCK_SIZE)
+
+    harshCtx.renderBlock = window.Module.cwrap('w_graph_render_block', null, ['number', 'number', 'number', 'number', 'number'])
   }
 
   function freeResources() {
@@ -66,25 +82,15 @@ export function setupAudio(element) {
     window.Module.ccall('h_graph_free', null, ['number'], [harshCtx.graphPtr])
   }
 
-  function processAudio() {
+  element.querySelector('button').addEventListener('click', () => {
     if (!harshCtx.graphPtr) {
       allocateResources()
     }
-
-    window.Module.ccall('w_graph_render_block', null, ['number', 'number', 'number', 'number', 'number'], [harshCtx.graphPtr, harshCtx.outPtr, harshCtx.ctxPtr, harshCtx.bufPtr, BLOCK_SIZE])
-
-    const samples = new Float32Array(window.Module.HEAPF32.buffer, harshCtx.bufPtr, BLOCK_SIZE)
-    const samplesCopy = new Float32Array(BLOCK_SIZE)
-    samplesCopy.set(samples)
-
-    setTimeout(processAudio, 0)
-
-    sendAudioBlock(samplesCopy)
-  }
-
-  element.querySelector('button').addEventListener('click', () => {
     initAudio().then(startAudio)
-    processAudio()
+
+    for (let i = 0; i < 4; i++) {
+      renderBlock()
+    }
     // const canvas = element.querySelector('canvas')
     // const ctx = canvas.getContext('2d')
 
