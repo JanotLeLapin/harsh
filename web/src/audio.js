@@ -27,9 +27,30 @@ export function setupAudio(element) {
 
   let synth;
 
+  const editorTheme = EditorView.theme({
+    "&": {
+      color: "white",
+      backgroundColor: "#034"
+    },
+    ".cm-content": {
+      caretColor: "white"
+    },
+    "&.cm-focused .cm-cursor": {
+      borderLeftColor: "white"
+    },
+    "&.cm-focused .cm-selectionBackground, ::selection": {
+      backgroundColor: "#074"
+    },
+    ".cm-gutters": {
+      backgroundColor: "#045",
+      color: "#ddd",
+      border: "none"
+    },
+  }, { dark: true })
+
   const editorView = new EditorView({
     parent: element.querySelector('#editor'),
-    extensions: [basicSetup]
+    extensions: [basicSetup, editorTheme],
   })
 
   element.querySelector('#editor').appendChild(editorView.dom)
