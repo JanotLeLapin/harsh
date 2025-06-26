@@ -98,7 +98,7 @@ export function setupAudio(element) {
 
     const ctxSize = window.Module.ccall('w_h_context_size', 'number')
     harshCtx.ctxPtr = window.Module._malloc(ctxSize)
-    window.Module.ccall('w_context_init', null, ['number', 'number'], [harshCtx.ctxPtr, 44100])
+    window.Module.ccall('w_context_init', null, ['number', 'number'], [harshCtx.ctxPtr, audioCtx.sampleRate])
 
     harshCtx.bufPtr = window.Module._malloc(4 * BLOCK_SIZE)
 
