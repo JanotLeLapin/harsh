@@ -1,3 +1,6 @@
+import { basicSetup } from 'codemirror';
+import { EditorView } from '@codemirror/view';
+
 const CANVAS_WIDTH = 1024
 const CANVAS_HEIGHT = 256
 
@@ -23,6 +26,13 @@ export function setupAudio(element) {
   */
 
   let synth;
+
+  const editorView = new EditorView({
+    parent: element.querySelector('#editor'),
+    extensions: [basicSetup]
+  })
+
+  element.querySelector('#editor').appendChild(editorView.dom)
 
   const samples = new Float32Array(BLOCK_SIZE)
 
@@ -114,7 +124,7 @@ export function setupAudio(element) {
   }
 
   element.querySelector('button').addEventListener('click', () => {
-    synth = element.querySelector('textarea').value
+    synth = editorView.state.doc.toString()
 
     if (harshCtx.graphPtr) {
       freeResources()

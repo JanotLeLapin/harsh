@@ -17,7 +17,7 @@ document.querySelector('#app').innerHTML = `
       <button id="counter" type="button"></button>
     </div>
     <div id="audio">
-      <textarea></textarea>
+      <div id="editor"></div>
       <button>Generate</button>
       <canvas width="1024px" height="256px"></canvas>
     </div>

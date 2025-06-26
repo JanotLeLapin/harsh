@@ -10,5 +10,9 @@
   },
   "devDependencies": {
     "vite": "^7.0.0"
+  },
+  "dependencies": {
+    "@codemirror/view": "^6.37.2",
+    "codemirror": "^6.0.2"
   }
 }
