@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "harsh.h"
@@ -141,6 +142,19 @@ process_diode_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 }
 
 static inline void
+process_hardclip_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
+{
+  h_graph_node_t *threshold, *input;
+
+  threshold = h_hm_get(g, node->data.clip.threshold);
+  input = h_hm_get(g, node->data.clip.input);
+  h_graph_process_node(g, threshold, ctx);
+  h_graph_process_node(g, input, ctx);
+
+  node->out = input->out < 0.0f ? fmax(input->out, -1 * threshold->out) : fmin(input->out, threshold->out);
+}
+
+static inline void
 process_bitcrush_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_bitcrush_t *data = &node->data.bitcrush;
@@ -196,6 +210,9 @@ h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   case H_NODE_DIODE:
     process_diode_node(g, node, ctx);
     break;
+  case H_NODE_HARDCLIP:
+    process_hardclip_node(g, node, ctx);
+    break;
   case H_NODE_BITCRUSH:
     process_bitcrush_node(g, node, ctx);
     break;
@@ -243,6 +260,11 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
   case H_NODE_DIODE:
     fprintf(stderr, "(diode)\n");
     graph_preview("input:", g, h_hm_get(g, node->data.diode), depth + 1);
+    break;
+  case H_NODE_HARDCLIP:
+    fprintf(stderr, "(hardclip)\n");
+    graph_preview("input:", g, h_hm_get(g, node->data.clip.input), depth + 1);
+    graph_preview("threshold:", g, h_hm_get(g, node->data.clip.threshold), depth + 1);
     break;
   case H_NODE_BITCRUSH:
     fprintf(stderr, "(bitcrush)\n");

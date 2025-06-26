@@ -269,6 +269,10 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
   } else if (STR_EQ("diode", an->name)) {
     gn.type = H_NODE_DIODE;
     gn.data.diode = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx)->name;
+  } else if (STR_EQ("hardclip", an->name)) {
+    gn.type = H_NODE_HARDCLIP;
+    gn.data.clip.threshold = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx)->name;
+    gn.data.clip.input = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count, ctx)->name;
   } else if (STR_EQ("bitcrush", an->name)) {
     child = h_vec_get(&an->children, 0);
     gn.type = H_NODE_BITCRUSH;
