@@ -13,7 +13,7 @@
 #define COLOR_GREEN "\x1b[32m"
 #define COLOR_BLUE "\x1b[36m"
 
-static const char *OP_MATH[] = { "+", "*", 0 };
+static const char *OP_MATH[] = { "+", "-", "*", "/", "pow", "log", "log2", "log10", "exp", 0 };
 static const char *OP_CMP[] = { "<", "<=", ">", ">=", "=", "!=", 0 };
 static const char *OP_OSC[] = { "sine", "square", "sawtooth", 0 };
 

@@ -42,7 +42,14 @@ typedef void *h_node_value_t;
 typedef struct {
   enum {
     H_NODE_MATH_ADD = 0,
+    H_NODE_MATH_SUB,
     H_NODE_MATH_MUL,
+    H_NODE_MATH_DIV,
+    H_NODE_MATH_POW,
+    H_NODE_MATH_LOGN,
+    H_NODE_MATH_LOG2,
+    H_NODE_MATH_LOG10,
+    H_NODE_MATH_EXP,
   } op;
   h_vec_t values;
 } h_node_math_t;

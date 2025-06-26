@@ -10,7 +10,7 @@ static inline void
 process_math_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_math_t data = node->data.math;
-  size_t i;
+  size_t i = 0;
   h_graph_node_t *elem;
 
   switch (data.op) {
@@ -20,17 +20,55 @@ process_math_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   case H_NODE_MATH_MUL:
     node->out = 1.0f;
     break;
+  case H_NODE_MATH_DIV:
+  case H_NODE_MATH_POW:
+    elem = h_hm_get(g, *((char **) h_vec_get(&data.values, i++)));
+    h_graph_process_node(g, elem, ctx);
+    node->out = elem->out;
+    break;
+  case H_NODE_MATH_SUB:
+    if (data.values.size > 1) {
+      elem = h_hm_get(g, *((char **) h_vec_get(&data.values, i++)));
+      h_graph_process_node(g, elem, ctx);
+      node->out = elem->out;
+    } else {
+      node->out = 0.0f;
+    }
+    break;
+  default:
+    break;
   }
 
-  for (i = 0; i < data.values.size; i++) {
+  for (; i < data.values.size; i++) {
     elem = h_hm_get(g, *((char **) h_vec_get(&data.values, i)));
     h_graph_process_node(g, elem, ctx);
     switch (data.op) {
     case H_NODE_MATH_ADD:
       node->out += elem->out;
       break;
+    case H_NODE_MATH_SUB:
+      node->out -= elem->out;
+      break;
     case H_NODE_MATH_MUL:
       node->out *= elem->out;
+      break;
+    case H_NODE_MATH_DIV:
+      node->out = 0.0f == elem->out ? 0.0f : node->out / elem->out;
+      break;
+    case H_NODE_MATH_POW:
+      node->out = powf(node->out, elem->out);
+      break;
+    case H_NODE_MATH_LOGN:
+      node->out = elem->out < 0.0f ? 0.0f : logf(elem->out);
+      break;
+    case H_NODE_MATH_LOG2:
+      node->out = elem->out < 0.0f ? 0.0f : log2f(elem->out);
+      break;
+    case H_NODE_MATH_LOG10:
+      node->out = elem->out < 0.0f ? 0.0f : log10f(elem->out);
+      break;
+    case H_NODE_MATH_EXP:
+      node->out = expf(elem->out);
       break;
     }
   }
