@@ -22,13 +22,13 @@ process_math_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
     break;
   case H_NODE_MATH_DIV:
   case H_NODE_MATH_POW:
-    elem = h_hm_get(g, *((char **) h_vec_get(&data.values, i++)));
+    elem = *(h_graph_node_t **) h_vec_get(&data.values, i++);
     h_graph_process_node(g, elem, ctx);
     node->out = elem->out;
     break;
   case H_NODE_MATH_SUB:
     if (data.values.size > 1) {
-      elem = h_hm_get(g, *((char **) h_vec_get(&data.values, i++)));
+      elem = *(h_graph_node_t **) h_vec_get(&data.values, i++);
       h_graph_process_node(g, elem, ctx);
       node->out = elem->out;
     } else {
@@ -40,7 +40,7 @@ process_math_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   }
 
   for (; i < data.values.size; i++) {
-    elem = h_hm_get(g, *((char **) h_vec_get(&data.values, i)));
+    elem = *(h_graph_node_t **) h_vec_get(&data.values, i);
     h_graph_process_node(g, elem, ctx);
     switch (data.op) {
     case H_NODE_MATH_ADD:
@@ -78,32 +78,29 @@ static inline void
 process_cmp_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_cmp_t data = node->data.cmp;
-  h_graph_node_t *left, *right;
   char res;
 
-  left = h_hm_get(g, data.left);
-  right = h_hm_get(g, data.right);
-  h_graph_process_node(g, left, ctx);
-  h_graph_process_node(g, right, ctx);
+  h_graph_process_node(g, data.left, ctx);
+  h_graph_process_node(g, data.right, ctx);
 
   switch (data.op) {
   case H_NODE_CMP_LT:
-    res = left->out < right->out;
+    res = data.left->out < data.right->out;
     break;
   case H_NODE_CMP_LEQT:
-    res = left->out <= right->out;
+    res = data.left->out <= data.right->out;
     break;
   case H_NODE_CMP_GT:
-    res = left->out > right->out;
+    res = data.left->out > data.right->out;
     break;
   case H_NODE_CMP_GEQT:
-    res = left->out >= right->out;
+    res = data.left->out >= data.right->out;
     break;
   case H_NODE_CMP_EQ:
-    res = left->out == right->out;
+    res = data.left->out == data.right->out;
     break;
   case H_NODE_CMP_NEQ:
-    res = left->out != right->out;
+    res = data.left->out != data.right->out;
     break;
   }
 
@@ -124,11 +121,9 @@ static inline void
 process_noise_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_noise_t *data = &node->data.noise;
-  h_graph_node_t *seed;
 
-  seed = h_hm_get(g, data->seed);
-  h_graph_process_node(g, seed, ctx);
-  data->state ^= (unsigned int) seed->out;
+  h_graph_process_node(g, data->seed, ctx);
+  data->state ^= (unsigned int) data->seed->out;
 
   float u1 = ((float) xorshift32(&data->state) + 1.0f) / ((float) UINT32_MAX + 2.0f);
   float u2 = ((float) xorshift32(&data->state) + 1.0f) / ((float) UINT32_MAX + 2.0f);
@@ -139,29 +134,26 @@ static inline void
 process_osc_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_osc_t *data = &node->data.osc;
-  h_graph_node_t *freq, *phase;
 
-  freq = h_hm_get(g, data->freq);
-  phase = h_hm_get(g, data->phase);
-  h_graph_process_node(g, freq, ctx);
-  h_graph_process_node(g, phase, ctx);
+  h_graph_process_node(g, data->freq, ctx);
+  h_graph_process_node(g, data->phase, ctx);
 
   switch (data->type) {
   case H_NODE_OSC_SINE:
-    node->out = sinf(data->current + phase->out);
-    data->current += 2.0f * M_PI * freq->out / ctx->sr;
+    node->out = sinf(data->current + data->phase->out);
+    data->current += 2.0f * M_PI * data->freq->out / ctx->sr;
     data->current = fmod(data->current, 2.0f * M_PI);
     if (data->current < 0.0f) data->current += 2.0f * M_PI;
     break;
   case H_NODE_OSC_SQUARE:
-    node->out = (data->current + phase->out < 0.5 ? -1.0f : 1.0f);
-    data->current += freq->out / ctx->sr;
+    node->out = (data->current + data->phase->out < 0.5 ? -1.0f : 1.0f);
+    data->current += data->freq->out / ctx->sr;
     data->current = fmodf(data->current, 1.0f);
     if (data->current < 0.0f) data->current += 1.0f;
     break;
   case H_NODE_OSC_SAWTOOTH:
-    node->out = (1.0f - 2.0f + phase->out);
-    data->current += freq->out / ctx->sr;
+    node->out = (1.0f - 2.0f + data->phase->out);
+    data->current += data->freq->out / ctx->sr;
     data->current = fmodf(data->current, 1.0f);
     if (data->current < 0.0f) data->current += 1.0f;
     break;
@@ -171,54 +163,42 @@ process_osc_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 static inline void
 process_diode_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
-  h_graph_node_t *input;
-
-  input = h_hm_get(g, node->data.diode);
-  h_graph_process_node(g, input, ctx);
-
-  node->out = log1pf(expf(input->out));
+  h_graph_process_node(g, node->data.diode, ctx);
+  node->out = log1pf(expf(node->data.diode->out));
 }
 
 static inline void
 process_hardclip_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
-  h_graph_node_t *threshold, *input;
+  h_graph_process_node(g, node->data.clip.threshold, ctx);
+  h_graph_process_node(g, node->data.clip.input, ctx);
 
-  threshold = h_hm_get(g, node->data.clip.threshold);
-  input = h_hm_get(g, node->data.clip.input);
-  h_graph_process_node(g, threshold, ctx);
-  h_graph_process_node(g, input, ctx);
-
-  node->out = fminf(fmaxf(input->out, -threshold->out), threshold->out);
+  node->out = fminf(fmaxf(node->data.clip.input->out, -node->data.clip.threshold->out), node->data.clip.threshold->out);
 }
 
 static inline void
 process_bitcrush_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_bitcrush_t *data = &node->data.bitcrush;
-  h_graph_node_t *input, *target_freq, *bits;
   float levels, norm, quantized;
 
-  input = h_hm_get(g, data->input);
-  target_freq = h_hm_get(g, data->target_freq);
-  bits = h_hm_get(g, data->bits);
-  h_graph_process_node(g, input, ctx);
-  h_graph_process_node(g, target_freq, ctx);
-  h_graph_process_node(g, bits, ctx);
+  h_graph_process_node(g, data->input, ctx);
+  h_graph_process_node(g, data->target_freq, ctx);
+  h_graph_process_node(g, data->bits, ctx);
 
-  data->current_freq += target_freq->out;
+  data->current_freq += data->target_freq->out;
   if (data->current_freq < ctx->sr) {
     return;
   }
   data->current_freq -= ctx->sr;
 
-  levels = powf(2.0f, bits->out);
+  levels = powf(2.0f, data->bits->out);
   if (levels <= 1.0f) {
     node->out = 0.0f;
     return;
   }
 
-  norm = (input->out + 1.0f) * 0.5f;
+  norm = (data->input->out + 1.0f) * 0.5f;
   quantized = floorf(norm * levels) / (levels - 1.0f);
   node->out = quantized * 2.0f - 1.0f;
 }
@@ -278,37 +258,37 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
   case H_NODE_MATH:
     fprintf(stderr, "(math)\n");
     for (i = 0; i < node->data.math.values.size; i++) {
-      graph_preview("elem:", g, h_hm_get(g, *((char **) h_vec_get(&node->data.math.values, i))), depth + 1);
+      graph_preview("elem:", g, *(h_graph_node_t **) h_vec_get(&node->data.math.values, i), depth + 1);
     }
     break;
   case H_NODE_CMP:
     fprintf(stderr, "(cmp)\n");
-    graph_preview("left:", g, h_hm_get(g, node->data.cmp.left), depth + 1);
-    graph_preview("right:", g, h_hm_get(g, node->data.cmp.right), depth + 1);
+    graph_preview("left:", g, node->data.cmp.left, depth + 1);
+    graph_preview("right:", g, node->data.cmp.right, depth + 1);
     break;
   case H_NODE_NOISE:
     fprintf(stderr, "(noise)\n");
-    graph_preview("seed:", g, h_hm_get(g, node->data.noise.seed), depth + 1);
+    graph_preview("seed:", g, node->data.noise.seed, depth + 1);
     break;
   case H_NODE_OSC:
     fprintf(stderr, "(osc)\n");
-    graph_preview("freq:", g, h_hm_get(g, node->data.osc.freq), depth + 1);
-    graph_preview("phase:", g, h_hm_get(g, node->data.osc.phase), depth + 1);
+    graph_preview("freq:", g, node->data.osc.freq, depth + 1);
+    graph_preview("phase:", g,  node->data.osc.phase, depth + 1);
     break;
   case H_NODE_DIODE:
     fprintf(stderr, "(diode)\n");
-    graph_preview("input:", g, h_hm_get(g, node->data.diode), depth + 1);
+    graph_preview("input:", g, node->data.diode, depth + 1);
     break;
   case H_NODE_HARDCLIP:
     fprintf(stderr, "(hardclip)\n");
-    graph_preview("input:", g, h_hm_get(g, node->data.clip.input), depth + 1);
-    graph_preview("threshold:", g, h_hm_get(g, node->data.clip.threshold), depth + 1);
+    graph_preview("input:", g, node->data.clip.input, depth + 1);
+    graph_preview("threshold:", g, node->data.clip.threshold, depth + 1);
     break;
   case H_NODE_BITCRUSH:
     fprintf(stderr, "(bitcrush)\n");
-    graph_preview("input:", g, h_hm_get(g, node->data.bitcrush.input), depth + 1);
-    graph_preview("target_freq:", g, h_hm_get(g, node->data.bitcrush.target_freq), depth + 1);
-    graph_preview("bits:", g, h_hm_get(g, node->data.bitcrush.bits), depth + 1);
+    graph_preview("input:", g, node->data.bitcrush.input, depth + 1);
+    graph_preview("target_freq:", g, node->data.bitcrush.target_freq, depth + 1);
+    graph_preview("bits:", g, node->data.bitcrush.bits, depth + 1);
     break;
   }
 }

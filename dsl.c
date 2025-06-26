@@ -210,9 +210,9 @@ str_arr_includes(const char **expected, src_string_t str)
 static h_graph_node_t *
 graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_ctx_t *ctx)
 {
-  h_graph_node_t gn, *inserted, *node;
+  h_graph_node_t gn, *inserted, *node, **ptr;
   ast_node_t *child;
-  char tmp[8], **ptr, *name;
+  char tmp[8], *name;
   int res;
   size_t i;
 
@@ -229,24 +229,23 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
   } else if (-1 != (res = str_arr_includes(OP_MATH, an->name))) {
     gn.type = H_NODE_MATH;
     gn.data.math.op = res;
-    h_vec_init(&gn.data.math.values, 2, sizeof(char **));
+    h_vec_init(&gn.data.math.values, 2, sizeof(h_graph_node_t **));
     for (i = 0; i < an->children.size; i++) {
       node = graph_expr_from_ast_put(g, h_vec_get(&an->children, i), elem_count, ctx);
-      name = node->name;
-      h_vec_push(&gn.data.math.values, &name);
+      h_vec_push(&gn.data.math.values, &node);
     }
   } else if (-1 != (res = str_arr_includes(OP_CMP, an->name))) {
     gn.type = H_NODE_CMP;
     gn.data.cmp.op = res;
-    gn.data.cmp.left = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx)->name;
-    gn.data.cmp.right = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count, ctx)->name;
+    gn.data.cmp.left = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx);
+    gn.data.cmp.right = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count, ctx);
   } else if (STR_EQ("noise", an->name)) {
     gn.type = H_NODE_NOISE;
     for (i = 0; i < an->children.size; i += 2) {
       child = h_vec_get(&an->children, i);
       if (STR_EQ(":seed", child->name)) {
         gn.data.noise.state = 1;
-        gn.data.noise.seed = graph_expr_from_ast_put(g, h_vec_get(&an->children, i + 1), elem_count, ctx)->name;
+        gn.data.noise.seed = graph_expr_from_ast_put(g, h_vec_get(&an->children, i + 1), elem_count, ctx);
       }
     }
   } else if (-1 != (res = str_arr_includes(OP_OSC, an->name))) {
@@ -264,20 +263,20 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
         fprintf(stderr, "unexpected argument for osc: '%.*s'\n", (int) child->plain.len - 1, child->plain.p + 1);
         continue;
       }
-      *ptr = graph_expr_from_ast_put(g, h_vec_get(&an->children, i + 1), elem_count, ctx)->name;
+      *ptr = graph_expr_from_ast_put(g, h_vec_get(&an->children, i + 1), elem_count, ctx);
     }
   } else if (STR_EQ("diode", an->name)) {
     gn.type = H_NODE_DIODE;
-    gn.data.diode = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx)->name;
+    gn.data.diode = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx);
   } else if (STR_EQ("hardclip", an->name)) {
     gn.type = H_NODE_HARDCLIP;
-    gn.data.clip.threshold = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx)->name;
-    gn.data.clip.input = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count, ctx)->name;
+    gn.data.clip.threshold = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx);
+    gn.data.clip.input = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count, ctx);
   } else if (STR_EQ("bitcrush", an->name)) {
     child = h_vec_get(&an->children, 0);
     gn.type = H_NODE_BITCRUSH;
     gn.data.bitcrush.current_freq = 0.0f;
-    gn.data.bitcrush.input = graph_expr_from_ast_put(g, child, elem_count, ctx)->name;
+    gn.data.bitcrush.input = graph_expr_from_ast_put(g, child, elem_count, ctx);
     for (i = 1; i < an->children.size; i += 2) {
       child = h_vec_get(&an->children, i);
       if (STR_EQ(":target_freq", child->name)) {
@@ -289,7 +288,7 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
         fprintf(stderr, "unexpected argument for bitcrush: '%.*s'\n", (int) child->plain.len - 1, child->plain.p + 1);
         continue;
       }
-      *ptr = graph_expr_from_ast_put(g, h_vec_get(&an->children, i + 1), elem_count, ctx)->name;
+      *ptr = graph_expr_from_ast_put(g, h_vec_get(&an->children, i + 1), elem_count, ctx);
     }
   } else {
     gn.type = H_NODE_VALUE;

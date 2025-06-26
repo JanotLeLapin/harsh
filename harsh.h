@@ -37,6 +37,8 @@ typedef struct {
 } h_context;
 
 /* dsp */
+typedef struct h_graph_node_s h_graph_node_t;
+
 typedef void *h_node_value_t;
 
 typedef struct {
@@ -63,13 +65,13 @@ typedef struct {
     H_NODE_CMP_EQ,
     H_NODE_CMP_NEQ,
   } op;
-  char *left;
-  char *right;
+  h_graph_node_t *left;
+  h_graph_node_t *right;
 } h_node_cmp_t;
 
 typedef struct {
   unsigned int state;
-  char *seed;
+  h_graph_node_t *seed;
 } h_node_noise_t;
 
 typedef struct {
@@ -79,22 +81,22 @@ typedef struct {
     H_NODE_OSC_SAWTOOTH,
   } type;
   float current;
-  char *freq;
-  char *phase;
+  h_graph_node_t *freq;
+  h_graph_node_t *phase;
 } h_node_osc_t;
 
-typedef char *h_node_diode_t;
+typedef h_graph_node_t *h_node_diode_t;
 
 typedef struct {
-  char *threshold;
-  char *input;
+  h_graph_node_t *threshold;
+  h_graph_node_t *input;
 } h_node_clip_t;
 
 typedef struct {
   float current_freq;
-  char *input;
-  char *target_freq;
-  char *bits;
+  h_graph_node_t *input;
+  h_graph_node_t *target_freq;
+  h_graph_node_t *bits;
 } h_node_bitcrush_t;
 
 typedef enum {
@@ -125,13 +127,13 @@ typedef union {
   h_node_bitcrush_t bitcrush;
 } h_graph_node_data_t;
 
-typedef struct {
+struct h_graph_node_s {
   char name[32];
   float out;
   size_t last_frame;
   h_graph_node_type_t type;
   h_graph_node_data_t data;
-} h_graph_node_t;
+};
 
 /* util */
 int h_vec_init(h_vec_t *v, size_t initial_capacity, size_t elem_size);
