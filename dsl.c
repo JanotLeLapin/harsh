@@ -13,10 +13,6 @@
 #define COLOR_GREEN "\x1b[32m"
 #define COLOR_BLUE "\x1b[36m"
 
-static const char *OP_MATH[] = { "+", "-", "*", "/", "pow", "log", "log2", "log10", "exp", 0 };
-static const char *OP_CMP[] = { "<", "<=", ">", ">=", "=", "!=", 0 };
-static const char *OP_OSC[] = { "sine", "square", "sawtooth", 0 };
-
 typedef struct {
   const char *src;
   size_t src_len;
@@ -226,7 +222,7 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
     gn.name[child->name.len] = '\0';
     inserted = h_hm_get(g, gn.name);
     return inserted;
-  } else if (-1 != (res = str_arr_includes(OP_MATH, an->name))) {
+  } else if (-1 != (res = str_arr_includes(H_OP_MATH, an->name))) {
     gn.type = H_NODE_MATH;
     gn.data.math.op = res;
     h_vec_init(&gn.data.math.values, 2, sizeof(h_graph_node_t **));
@@ -234,7 +230,7 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
       node = graph_expr_from_ast_put(g, h_vec_get(&an->children, i), elem_count, ctx);
       h_vec_push(&gn.data.math.values, &node);
     }
-  } else if (-1 != (res = str_arr_includes(OP_CMP, an->name))) {
+  } else if (-1 != (res = str_arr_includes(H_OP_CMP, an->name))) {
     gn.type = H_NODE_CMP;
     gn.data.cmp.op = res;
     gn.data.cmp.left = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx);
@@ -248,7 +244,7 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
         gn.data.noise.seed = graph_expr_from_ast_put(g, h_vec_get(&an->children, i + 1), elem_count, ctx);
       }
     }
-  } else if (-1 != (res = str_arr_includes(OP_OSC, an->name))) {
+  } else if (-1 != (res = str_arr_includes(H_OP_OSC, an->name))) {
     gn.type = H_NODE_OSC;
     gn.data.osc.type = res;
     gn.data.osc.current = 0.0f;

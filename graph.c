@@ -256,13 +256,13 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
     fprintf(stderr, "(literal %f)\n", node->out);
     break;
   case H_NODE_MATH:
-    fprintf(stderr, "(math)\n");
+    fprintf(stderr, "(math, %s)\n", H_OP_MATH[node->data.math.op]);
     for (i = 0; i < node->data.math.values.size; i++) {
       graph_preview("elem:", g, *(h_graph_node_t **) h_vec_get(&node->data.math.values, i), depth + 1);
     }
     break;
   case H_NODE_CMP:
-    fprintf(stderr, "(cmp)\n");
+    fprintf(stderr, "(cmp, %s)\n", H_OP_CMP[node->data.cmp.op]);
     graph_preview("left:", g, node->data.cmp.left, depth + 1);
     graph_preview("right:", g, node->data.cmp.right, depth + 1);
     break;
@@ -271,7 +271,7 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
     graph_preview("seed:", g, node->data.noise.seed, depth + 1);
     break;
   case H_NODE_OSC:
-    fprintf(stderr, "(osc)\n");
+    fprintf(stderr, "(osc, %s)\n", H_OP_OSC[node->data.osc.type]);
     graph_preview("freq:", g, node->data.osc.freq, depth + 1);
     graph_preview("phase:", g,  node->data.osc.phase, depth + 1);
     break;

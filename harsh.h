@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+static const char *H_OP_MATH[] = { "+", "-", "*", "/", "pow", "log", "log2", "log10", "exp", 0 };
+static const char *H_OP_CMP[] = { "<", "<=", ">", ">=", "=", "!=", 0 };
+static const char *H_OP_OSC[] = { "sine", "square", "sawtooth", 0 };
+
 /* util */
 typedef struct {
   size_t capacity;
