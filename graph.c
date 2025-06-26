@@ -151,7 +151,7 @@ process_hardclip_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   h_graph_process_node(g, threshold, ctx);
   h_graph_process_node(g, input, ctx);
 
-  node->out = input->out < 0.0f ? fmax(input->out, -1 * threshold->out) : fmin(input->out, threshold->out);
+  node->out = fminf(fmaxf(input->out, -threshold->out), threshold->out);
 }
 
 static inline void
