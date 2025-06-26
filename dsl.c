@@ -235,6 +235,10 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
     gn.data.cmp.op = res;
     gn.data.cmp.left = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx);
     gn.data.cmp.right = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count, ctx);
+  } else if (-1 != (res = str_arr_includes(H_OP_CONVERSION, an->name))) {
+    gn.type = H_NODE_CONVERSION;
+    gn.data.conversion.op = res;
+    gn.data.conversion.input = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx);
   } else if (STR_EQ("noise", an->name)) {
     gn.type = H_NODE_NOISE;
     for (i = 0; i < an->children.size; i += 2) {

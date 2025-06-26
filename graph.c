@@ -107,6 +107,23 @@ process_cmp_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   node->out = res ? 1.0f : 0.0f;
 }
 
+static inline void
+process_conversion_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
+{
+  h_node_conversion_t data = node->data.conversion;
+
+  h_graph_process_node(g, data.input, ctx);
+
+  switch (data.op) {
+  case H_NODE_CONVERSION_MTOF:
+    node->out = 440.0f * powf(2.0f, (data.input->out - 69.0f) / 12.0f);
+    break;
+  case H_NODE_CONVERSION_FTOM:
+    node->out = 69.0f + 12.0f * log2f(data.input->out / 440.0f);
+    break;
+  }
+}
+
 static inline uint32_t
 xorshift32(uint32_t *state)
 {
@@ -219,6 +236,9 @@ h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   case H_NODE_CMP:
     process_cmp_node(g, node, ctx);
     break;
+  case H_NODE_CONVERSION:
+    process_conversion_node(g, node, ctx);
+    break;
   case H_NODE_NOISE:
     process_noise_node(g, node, ctx);
     break;
@@ -265,6 +285,10 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
     fprintf(stderr, "(cmp, %s)\n", H_OP_CMP[node->data.cmp.op]);
     graph_preview("left:", g, node->data.cmp.left, depth + 1);
     graph_preview("right:", g, node->data.cmp.right, depth + 1);
+    break;
+  case H_NODE_CONVERSION:
+    fprintf(stderr, "(conversion, %s)\n", H_OP_CONVERSION[node->data.conversion.op]);
+    graph_preview("input:", g, node->data.conversion.input, depth + 1);
     break;
   case H_NODE_NOISE:
     fprintf(stderr, "(noise)\n");
