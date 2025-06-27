@@ -200,6 +200,29 @@ process_hardclip_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 }
 
 static inline void
+process_filter_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
+{
+  h_node_filter_t *data;
+  float a;
+
+  data = &node->data.filter;
+
+  h_graph_process_node(g, data->input, ctx);
+  h_graph_process_node(g, data->cutoff, ctx);
+
+  a = expf(-2.0f * M_PI * data->cutoff->out / ctx->sr);
+  switch (data->type) {
+  case H_NODE_FILTER_LOWPASS:
+    node->out = (1 - a) * data->input->out + a * node->out;
+    break;
+  case H_NODE_FILTER_HIGHPASS:
+    node->out = a * (node->out) + data->input->out - data->prev;
+    data->prev = data->input->out;
+    break;
+  }
+}
+
+static inline void
 process_bitcrush_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_bitcrush_t *data = &node->data.bitcrush;
@@ -257,6 +280,9 @@ h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   case H_NODE_HARDCLIP:
     process_hardclip_node(g, node, ctx);
     break;
+  case H_NODE_FILTER:
+    process_filter_node(g, node, ctx);
+    break;
   case H_NODE_BITCRUSH:
     process_bitcrush_node(g, node, ctx);
     break;
@@ -313,6 +339,11 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
     fprintf(stderr, "(hardclip)\n");
     graph_preview("input:", g, node->data.clip.input, depth + 1);
     graph_preview("threshold:", g, node->data.clip.threshold, depth + 1);
+    break;
+  case H_NODE_FILTER:
+    fprintf(stderr, "(filter, %s)\n", H_OP_FILTER[node->data.filter.type]);
+    graph_preview("input:", g, node->data.filter.input, depth + 1);
+    graph_preview("cutoff:", g, node->data.filter.cutoff, depth + 1);
     break;
   case H_NODE_BITCRUSH:
     fprintf(stderr, "(bitcrush)\n");

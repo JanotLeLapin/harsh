@@ -291,6 +291,12 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
     gn.type = H_NODE_HARDCLIP;
     gn.data.clip.threshold = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx);
     gn.data.clip.input = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count, ctx);
+  } else if (-1 != (res = str_arr_includes(H_OP_FILTER, an->name))) {
+    gn.type = H_NODE_FILTER;
+    gn.data.filter.type = res;
+    gn.data.filter.prev = 0.0f;
+    gn.data.filter.cutoff = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx);
+    gn.data.filter.input = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count, ctx);
   } else if (STR_EQ("bitcrush", an->name)) {
     child = h_vec_get(&an->children, 0);
     gn.type = H_NODE_BITCRUSH;
