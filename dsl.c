@@ -203,6 +203,20 @@ str_arr_includes(const char **expected, src_string_t str)
   return -1;
 }
 
+static inline h_graph_node_t *
+graph_literal(h_hm_t *g, float value, size_t *elem_count)
+{
+  h_graph_node_t *res = malloc(sizeof(h_graph_node_t));
+  res->type = H_NODE_VALUE;
+  res->out = value;
+  res->last_frame = 0;
+  snprintf(res->name, sizeof(res->name), "_anon_%ld", (*elem_count)++);
+
+  h_hm_put(g, res->name, res);
+
+  return res;
+}
+
 static h_graph_node_t *
 graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_ctx_t *ctx)
 {
@@ -252,6 +266,8 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
     gn.type = H_NODE_OSC;
     gn.data.osc.type = res;
     gn.data.osc.current = 0.0f;
+    gn.data.osc.freq = 0;
+    gn.data.osc.phase = 0;
     for (i = 0; i < an->children.size; i += 2) {
       child = h_vec_get(&an->children, i);
       if (STR_EQ(":freq", child->name)) {
@@ -264,6 +280,9 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
         continue;
       }
       *ptr = graph_expr_from_ast_put(g, h_vec_get(&an->children, i + 1), elem_count, ctx);
+    }
+    if (0 == gn.data.osc.phase) {
+      gn.data.osc.phase = graph_literal(g, 0.0, elem_count);
     }
   } else if (STR_EQ("diode", an->name)) {
     gn.type = H_NODE_DIODE;
