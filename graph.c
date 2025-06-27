@@ -261,6 +261,36 @@ process_bitcrush_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   node->out = quantized * 2.0f - 1.0f;
 }
 
+static inline void
+process_envelope_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
+{
+  float time;
+  size_t i;
+  h_node_envelope_t *data;
+  h_graph_node_t *t0, *p0, *t1, *p1;
+
+  time = (ctx->current_frame / ctx->sr) * 1000.0f;
+
+  data = &node->data.envelope;
+  for (i = 0; i < data->points.size; i++) {
+    p0 = *(h_graph_node_t **) h_vec_get(&data->points, i);
+    h_graph_process_node(g, p0, ctx);
+  }
+
+  for (size_t i = data->current_idx; i <= data->points.size - 4; i += 2) {
+    t0 = *(h_graph_node_t **) h_vec_get(&data->points, i);
+    p0 = *(h_graph_node_t **) h_vec_get(&data->points, i + 1);
+    t1 = *(h_graph_node_t **) h_vec_get(&data->points, i + 2);
+    p1 = *(h_graph_node_t **) h_vec_get(&data->points, i + 3);
+
+    if (time >= t0->out && time < t1->out) {
+      node->out = p0->out + (time - t0->out) / (t1->out - t0->out) * (p1->out - p0->out);
+      data->current_idx = i;
+      return;
+    }
+  }
+}
+
 void
 h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
@@ -297,6 +327,9 @@ h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
     break;
   case H_NODE_BITCRUSH:
     process_bitcrush_node(g, node, ctx);
+    break;
+  case H_NODE_ENVELOPE:
+    process_envelope_node(g, node, ctx);
     break;
   }
 
@@ -363,6 +396,12 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
     graph_preview("target_freq:", g, node->data.bitcrush.target_freq, depth + 1);
     graph_preview("bits:", g, node->data.bitcrush.bits, depth + 1);
     break;
+  case H_NODE_ENVELOPE:
+    fprintf(stderr, "(envelope)\n");
+    for (i = 0; i < node->data.envelope.points.size; i++) {
+      graph_preview("point:", g, *(h_graph_node_t **) h_vec_get(&node->data.envelope.points, i), depth + 1);
+    }
+    break;
   }
 }
 
@@ -398,6 +437,9 @@ h_graph_free(h_hm_t *g)
       switch (node->type) {
       case H_NODE_MATH:
         h_vec_free(&node->data.math.values);
+        break;
+      case H_NODE_ENVELOPE:
+        h_vec_free(&node->data.envelope.points);
         break;
       default:
         break;

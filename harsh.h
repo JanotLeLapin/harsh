@@ -127,6 +127,11 @@ typedef struct {
   h_graph_node_t *bits;
 } h_node_bitcrush_t;
 
+typedef struct {
+  size_t current_idx;
+  h_vec_t points;
+} h_node_envelope_t;
+
 typedef enum {
   H_NODE_VALUE,
   H_NODE_MATH,
@@ -143,6 +148,8 @@ typedef enum {
   H_NODE_FILTER,
 
   H_NODE_BITCRUSH,
+
+  H_NODE_ENVELOPE,
 } h_graph_node_type_t;
 
 typedef union {
@@ -161,6 +168,8 @@ typedef union {
   h_node_filter_t filter;
 
   h_node_bitcrush_t bitcrush;
+
+  h_node_envelope_t envelope;
 } h_graph_node_data_t;
 
 struct h_graph_node_s {

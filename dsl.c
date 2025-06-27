@@ -321,6 +321,14 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
       }
       *ptr = graph_expr_from_ast_put(g, h_vec_get(&an->children, i + 1), elem_count, ctx);
     }
+  } else if (STR_EQ("envelope", an->name)) {
+    gn.type = H_NODE_ENVELOPE;
+    gn.data.envelope.current_idx = 0;
+    h_vec_init(&gn.data.envelope.points, 8, sizeof(h_graph_node_t **));
+    for (i = 0; i < an->children.size; i++) {
+      node = graph_expr_from_ast_put(g, h_vec_get(&an->children, i), elem_count, ctx);
+      h_vec_push(&gn.data.envelope.points, &node);
+    }
   } else {
     gn.type = H_NODE_VALUE;
     memcpy(tmp, an->name.p, an->name.len);
