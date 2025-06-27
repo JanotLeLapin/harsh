@@ -121,6 +121,12 @@ process_conversion_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   case H_NODE_CONVERSION_FTOM:
     node->out = 69.0f + 12.0f * log2f(data.input->out / 440.0f);
     break;
+  case H_NODE_CONVERSION_DTOA:
+    node->out = 20.0f * log10f(data.input->out);
+    break;
+  case H_NODE_CONVERSION_ATOD:
+    node->out = powf(10.0f, node->out / 20.0f);
+    break;
   }
 }
 

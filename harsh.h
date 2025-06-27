@@ -6,7 +6,7 @@
 
 static const char *H_OP_MATH[] = { "+", "-", "*", "/", "pow", "log", "log2", "log10", "exp", 0 };
 static const char *H_OP_CMP[] = { "<", "<=", ">", ">=", "=", "!=", 0 };
-static const char *H_OP_CONVERSION[] = { "midi->freq", "freq->midi", 0 };
+static const char *H_OP_CONVERSION[] = { "midi->freq", "freq->midi", "db->amp", "amp->db", 0 };
 static const char *H_OP_OSC[] = { "sine", "square", "sawtooth", 0 };
 
 /* util */
@@ -78,6 +78,8 @@ typedef struct {
   enum {
     H_NODE_CONVERSION_MTOF = 0,
     H_NODE_CONVERSION_FTOM,
+    H_NODE_CONVERSION_DTOA,
+    H_NODE_CONVERSION_ATOD,
   } op;
   h_graph_node_t *input;
 } h_node_conversion_t;
