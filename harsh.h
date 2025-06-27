@@ -113,9 +113,11 @@ typedef struct {
     H_NODE_FILTER_LOWPASS = 0,
     H_NODE_FILTER_HIGHPASS,
   } type;
-  float prev;
-  h_graph_node_t *input;
+  float in[4];
+  float out[4];
   h_graph_node_t *cutoff;
+  h_graph_node_t *stages;
+  h_graph_node_t *input;
 } h_node_filter_t;
 
 typedef struct {

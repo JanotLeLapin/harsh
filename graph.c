@@ -203,23 +203,35 @@ static inline void
 process_filter_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_filter_t *data;
-  float a;
+  float a, stage_in;
+  int stages, i;
 
   data = &node->data.filter;
 
   h_graph_process_node(g, data->input, ctx);
+  h_graph_process_node(g, data->stages, ctx);
   h_graph_process_node(g, data->cutoff, ctx);
 
   a = expf(-2.0f * M_PI * data->cutoff->out / ctx->sr);
+  stages = (int) roundf(fmax(1.0, fmin(4.0, data->stages->out)));
   switch (data->type) {
   case H_NODE_FILTER_LOWPASS:
-    node->out = (1 - a) * data->input->out + a * node->out;
+    stage_in = data->input->out;
+    for (i = 0; i < stages; i++) {
+      data->out[i] = (1 - a) * stage_in + a * data->out[i];
+      stage_in = data->out[i];
+    }
     break;
   case H_NODE_FILTER_HIGHPASS:
-    node->out = a * (node->out) + data->input->out - data->prev;
-    data->prev = data->input->out;
+    stage_in = data->input->out;
+    for (i = 0; i < stages; i++) {
+      data->out[i] = a * (data->out[i]) + stage_in - data->in[i];
+      data->in[i] = stage_in;
+      stage_in = data->out[i];
+    }
     break;
   }
+  node->out = data->out[i - 1];
 }
 
 static inline void
