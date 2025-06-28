@@ -193,10 +193,22 @@ process_diode_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 static inline void
 process_hardclip_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
-  h_graph_process_node(g, node->data.clip.threshold, ctx);
-  h_graph_process_node(g, node->data.clip.input, ctx);
+  h_node_clip_t data = node->data.clip;
 
-  node->out = fminf(fmaxf(node->data.clip.input->out, -node->data.clip.threshold->out), node->data.clip.threshold->out);
+  h_graph_process_node(g, data.threshold, ctx);
+  h_graph_process_node(g, data.input, ctx);
+
+  switch (data.type) {
+  case H_NODE_CLIP_HARDCLIP:
+    node->out = fminf(fmaxf(data.input->out, -data.threshold->out), data.threshold->out);
+    break;
+  case H_NODE_CLIP_FOLDBACK:
+    /* https://www.musicdsp.org/en/latest/Effects/203-fold-back-distortion.html */
+    if (data.input->out > data.threshold->out || data.input->out < -data.threshold->out) {
+      node->out = fabsf(fabsf(fmodf(data.input->out, data.threshold->out * 4)) - data.threshold->out * 2) - data.threshold->out;
+    }
+    break;
+  }
 }
 
 static inline void
@@ -319,7 +331,7 @@ h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   case H_NODE_DIODE:
     process_diode_node(g, node, ctx);
     break;
-  case H_NODE_HARDCLIP:
+  case H_NODE_CLIP:
     process_hardclip_node(g, node, ctx);
     break;
   case H_NODE_FILTER:
@@ -380,8 +392,8 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
     fprintf(stderr, "(diode)\n");
     graph_preview("input:", g, node->data.diode, depth + 1);
     break;
-  case H_NODE_HARDCLIP:
-    fprintf(stderr, "(hardclip)\n");
+  case H_NODE_CLIP:
+    fprintf(stderr, "(clip, %s)\n", H_OP_CLIP[node->data.clip.type]);
     graph_preview("input:", g, node->data.clip.input, depth + 1);
     graph_preview("threshold:", g, node->data.clip.threshold, depth + 1);
     break;

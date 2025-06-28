@@ -8,6 +8,7 @@ static const char *H_OP_MATH[] = { "+", "-", "*", "/", "pow", "log", "log2", "lo
 static const char *H_OP_CMP[] = { "<", "<=", ">", ">=", "=", "!=", 0 };
 static const char *H_OP_CONVERSION[] = { "midi->freq", "freq->midi", "db->amp", "amp->db", 0 };
 static const char *H_OP_OSC[] = { "sine", "square", "sawtooth", 0 };
+static const char *H_OP_CLIP[] = { "hardclip", "foldback", 0 };
 static const char *H_OP_FILTER[] = { "lowpass", "highpass", 0 };
 
 /* util */
@@ -104,6 +105,10 @@ typedef struct {
 typedef h_graph_node_t *h_node_diode_t;
 
 typedef struct {
+  enum {
+    H_NODE_CLIP_HARDCLIP = 0,
+    H_NODE_CLIP_FOLDBACK,
+  } type;
   h_graph_node_t *threshold;
   h_graph_node_t *input;
 } h_node_clip_t;
@@ -143,7 +148,7 @@ typedef enum {
   H_NODE_OSC,
 
   H_NODE_DIODE,
-  H_NODE_HARDCLIP,
+  H_NODE_CLIP,
 
   H_NODE_FILTER,
 
