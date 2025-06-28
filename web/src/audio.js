@@ -1,5 +1,6 @@
 import { basicSetup } from 'codemirror';
 import { EditorView } from '@codemirror/view';
+import { HarshGraph } from './harsh';
 
 const CANVAS_WIDTH = 1024
 const CANVAS_HEIGHT = 256
@@ -9,14 +10,8 @@ const BLOCK_SIZE = 512
 export function setupAudio(element) {
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
   let workletNode;
-  const harshCtx = {
-    graphPtr: undefined,
-    srcPtr: undefined,
-    outPtr: undefined,
-    ctxPtr: undefined,
-    bufPtr: undefined,
-    renderBlock: undefined,
-  }
+
+  let graph;
 
   /*
   let synth = `(synth
@@ -83,8 +78,7 @@ export function setupAudio(element) {
   }
 
   function renderBlock() {
-    harshCtx.renderBlock(harshCtx.graphPtr, harshCtx.outPtr, harshCtx.ctxPtr, harshCtx.bufPtr, BLOCK_SIZE)
-    samples.set(new Float32Array(window.Module.HEAPF32.buffer, harshCtx.bufPtr, BLOCK_SIZE))
+    graph.render(samples)
     sendAudioBlock(samples)
     drawSignal()
   }
@@ -112,46 +106,14 @@ export function setupAudio(element) {
     }
   }
 
-  function allocateResources() {
-    console.log('allocating')
-    const hmSize = window.Module.ccall('w_h_hm_t_size', 'number')
-    harshCtx.graphPtr = window.Module._malloc(hmSize)
-
-    const srcEncoded = new TextEncoder().encode(synth + '\0')
-    harshCtx.srcPtr = window.Module._malloc(srcEncoded.length)
-    window.Module.HEAPU8.set(srcEncoded, harshCtx.srcPtr)
-
-    window.Module.ccall('h_dsl_load', null, ['number', 'number', 'number'], [harshCtx.graphPtr, harshCtx.srcPtr, srcEncoded.length])
-
-    const outEncoded = new TextEncoder().encode('output\0')
-    harshCtx.outPtr = window.Module._malloc(outEncoded.length)
-    window.Module.HEAPU8.set(outEncoded, harshCtx.outPtr)
-
-    const ctxSize = window.Module.ccall('w_h_context_size', 'number')
-    harshCtx.ctxPtr = window.Module._malloc(ctxSize)
-    window.Module.ccall('w_context_init', null, ['number', 'number'], [harshCtx.ctxPtr, audioCtx.sampleRate])
-
-    harshCtx.bufPtr = window.Module._malloc(4 * BLOCK_SIZE)
-
-    harshCtx.renderBlock = window.Module.cwrap('w_graph_render_block', null, ['number', 'number', 'number', 'number', 'number'])
-  }
-
-  function freeResources() {
-    window.Module._free(harshCtx.bufPtr)
-    window.Module._free(harshCtx.ctxPtr)
-    window.Module._free(harshCtx.outPtr)
-    window.Module._free(harshCtx.srcPtr)
-    window.Module.ccall('h_graph_free', null, ['number'], [harshCtx.graphPtr])
-  }
-
   element.querySelector('button').addEventListener('click', () => {
     synth = editorView.state.doc.toString()
 
-    if (harshCtx.graphPtr) {
-      freeResources()
+    if (graph) {
+      graph.free()
     }
 
-    allocateResources()
+    graph = HarshGraph.create(synth, BLOCK_SIZE, audioCtx.sampleRate)
 
     startAudio()
 
