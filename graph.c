@@ -206,6 +206,8 @@ process_hardclip_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
     /* https://www.musicdsp.org/en/latest/Effects/203-fold-back-distortion.html */
     if (data.input->out > data.threshold->out || data.input->out < -data.threshold->out) {
       node->out = fabsf(fabsf(fmodf(data.input->out, data.threshold->out * 4)) - data.threshold->out * 2) - data.threshold->out;
+    } else {
+      node->out = data.input->out;
     }
     break;
   }
