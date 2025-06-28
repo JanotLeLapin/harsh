@@ -220,7 +220,7 @@ graph_literal(h_hm_t *g, float value, size_t *elem_count)
 static h_graph_node_t *
 graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_ctx_t *ctx)
 {
-  h_graph_node_t gn, *inserted, *node, **ptr;
+  h_graph_node_t gn, *inserted, *node, *n_zero, *n_one, **ptr;
   ast_node_t *child;
   char tmp[8], *name;
   int res;
@@ -329,6 +329,20 @@ graph_expr_from_ast(h_hm_t *g, ast_node_t *an, size_t *elem_count, const parser_
       node = graph_expr_from_ast_put(g, h_vec_get(&an->children, i), elem_count, ctx);
       h_vec_push(&gn.data.envelope.points, &node);
     }
+  } else if (STR_EQ("ad", an->name)) {
+    gn.type = H_NODE_ENVELOPE;
+    gn.data.envelope.current_idx = 0;
+    h_vec_init(&gn.data.envelope.points, 6, sizeof(h_graph_node_t **));
+    n_zero = graph_literal(g, 0.0, elem_count);
+    n_one = graph_literal(g, 1.0, elem_count);
+    h_vec_push(&gn.data.envelope.points, &n_zero);
+    h_vec_push(&gn.data.envelope.points, &n_zero);
+    node = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx);
+    h_vec_push(&gn.data.envelope.points, &node);
+    h_vec_push(&gn.data.envelope.points, &n_one);
+    node = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count, ctx);
+    h_vec_push(&gn.data.envelope.points, &node);
+    h_vec_push(&gn.data.envelope.points, &n_zero);
   } else {
     gn.type = H_NODE_VALUE;
     memcpy(tmp, an->name.p, an->name.len);
