@@ -20,8 +20,17 @@ typedef struct {
 } arg_spec_t;
 
 typedef struct {
-  arg_spec_t args[MAX_ARGS];
-  size_t count;
+  enum {
+    ARG_SPECS_VARARG,
+    ARG_SPECS_TYPED,
+  } type;
+  union {
+    struct {
+      arg_spec_t args[MAX_ARGS];
+      size_t count;
+    };
+    h_vec_t *target;
+  };
 } arg_specs_t;
 
 static h_graph_node_t *graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count);
@@ -60,9 +69,16 @@ arg_spec(arg_specs_t *specs, const h_dsl_string_t str, h_graph_node_t *node)
   int res;
   size_t i;
 
-  if (-1 != (res = str_arr_includes(H_OP_CMP, str))) {
+  if (-1 != (res = str_arr_includes(H_OP_MATH, str))) {
+    node->type = H_NODE_MATH;
+    node->data.math.op = res;
+    specs->type = ARG_SPECS_VARARG;
+    specs->target = &node->data.math.values;
+    return 1;
+  } else if (-1 != (res = str_arr_includes(H_OP_CMP, str))) {
     node->type = H_NODE_CMP;
     node->data.cmp.op = res;
+    specs->type = ARG_SPECS_TYPED;
     specs->args[0] = ARG_REQ(":left", &node->data.cmp.left);
     specs->args[1] = ARG_REQ(":right", &node->data.cmp.right);
     specs->count = 2;
@@ -70,29 +86,34 @@ arg_spec(arg_specs_t *specs, const h_dsl_string_t str, h_graph_node_t *node)
   } else if (-1 != (res = str_arr_includes(H_OP_CONVERSION, str))) {
     node->type = H_NODE_CONVERSION;
     node->data.conversion.op = res;
+    specs->type = ARG_SPECS_TYPED;
     specs->args[0] = ARG_REQ(":in", &node->data.conversion.input);
     specs->count = 1;
     return 1;
   } else if (STR_EQ("noise", str)) {
     node->type = H_NODE_NOISE;
+    specs->type = ARG_SPECS_TYPED;
     specs->args[0] = ARG_OPT(":seed", 0.0f, &node->data.noise.seed);
     specs->count = 1;
     return 1;
   } else if (-1 != (res = str_arr_includes(H_OP_OSC, str))) {
     node->type = H_NODE_OSC;
     node->data.osc.type = res;
+    specs->type = ARG_SPECS_TYPED;
     specs->args[0] = ARG_REQ(":freq", &node->data.osc.freq);
     specs->args[1] = ARG_OPT(":phase", 0.0f, &node->data.osc.phase);
     specs->count = 2;
     return 1;
   } else if (STR_EQ("diode", str)) {
     node->type = H_NODE_DIODE;
+    specs->type = ARG_SPECS_TYPED;
     specs->args[0] = ARG_REQ(":in", &node->data.diode);
     specs->count = 1;
     return 1;
   } else if (-1 != (res = str_arr_includes(H_OP_CLIP, str))) {
     node->type = H_NODE_CLIP;
     node->data.clip.type = res;
+    specs->type = ARG_SPECS_TYPED;
     specs->args[0] = ARG_REQ(":in", &node->data.clip.input);
     specs->args[1] = ARG_REQ(":threshold", &node->data.clip.threshold);
     specs->count = 2;
@@ -100,6 +121,7 @@ arg_spec(arg_specs_t *specs, const h_dsl_string_t str, h_graph_node_t *node)
   } else if (-1 != (res = str_arr_includes(H_OP_FILTER, str))) {
     node->type = H_NODE_FILTER;
     node->data.filter.type = res;
+    specs->type = ARG_SPECS_TYPED;
     specs->args[0] = ARG_REQ(":in", &node->data.filter.input);
     specs->args[1] = ARG_REQ(":cutoff", &node->data.filter.cutoff);
     specs->args[2] = ARG_OPT(":stages", 1.0f, &node->data.filter.stages);
@@ -107,10 +129,17 @@ arg_spec(arg_specs_t *specs, const h_dsl_string_t str, h_graph_node_t *node)
     return 1;
   } else if (STR_EQ("bitcrush", str)) {
     node->type = H_NODE_BITCRUSH;
+    specs->type = ARG_SPECS_TYPED;
     specs->args[0] = ARG_REQ(":in", &node->data.bitcrush.input);
     specs->args[1] = ARG_OPT(":target_freq", 44100.0f, &node->data.bitcrush.target_freq);
     specs->args[2] = ARG_OPT(":bits", 16.0f, &node->data.bitcrush.bits);
     specs->count = 3;
+    return 1;
+  } else if (STR_EQ("envelope", str)) {
+    node->type = H_NODE_ENVELOPE;
+    node->data.envelope.current_idx = 0;
+    specs->type = ARG_SPECS_VARARG;
+    specs->target = &node->data.envelope.points;
     return 1;
   }
 
@@ -153,22 +182,6 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
     gn.name[child->name.len] = '\0';
     inserted = h_hm_get(g, gn.name);
     return inserted;
-  } else if (-1 != (res = str_arr_includes(H_OP_MATH, an->name))) {
-    gn.type = H_NODE_MATH;
-    gn.data.math.op = res;
-    h_vec_init(&gn.data.math.values, 2, sizeof(h_graph_node_t **));
-    for (i = 0; i < an->children.size; i++) {
-      node = graph_expr_from_ast_put(g, h_vec_get(&an->children, i), elem_count);
-      h_vec_push(&gn.data.math.values, &node);
-    }
-  } else if (STR_EQ("envelope", an->name)) {
-    gn.type = H_NODE_ENVELOPE;
-    gn.data.envelope.current_idx = 0;
-    h_vec_init(&gn.data.envelope.points, 8, sizeof(h_graph_node_t **));
-    for (i = 0; i < an->children.size; i++) {
-      node = graph_expr_from_ast_put(g, h_vec_get(&an->children, i), elem_count);
-      h_vec_push(&gn.data.envelope.points, &node);
-    }
   } else if (STR_EQ("ad", an->name)) {
     gn.type = H_NODE_ENVELOPE;
     gn.data.envelope.current_idx = 0;
@@ -184,33 +197,44 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
     h_vec_push(&gn.data.envelope.points, &node);
     h_vec_push(&gn.data.envelope.points, &n_zero);
   } else if (1 == arg_spec(&specs, an->name, &gn)) {
-    for (i = 0; i < an->children.size; i++) {
-      found = 0;
-      for (j = 0; j < specs.count; j++) {
-        child = h_vec_get(&an->children, i);
-        if (!strncmp(specs.args[j].name, child->name.p, child->name.len) && specs.args[j].name[child->name.len] == '\0') {
-          child = h_vec_get(&an->children, ++i);
-          *specs.args[j].target = graph_expr_from_ast_put(g, child, elem_count);
-          found = 1;
-          break;
+    switch (specs.type) {
+    case ARG_SPECS_VARARG:
+      h_vec_init(specs.target, 8, sizeof(h_graph_node_t **));
+      for (i = 0; i < an->children.size; i++) {
+        node = graph_expr_from_ast_put(g, h_vec_get(&an->children, i),elem_count);
+        h_vec_push(specs.target, &node);
+      }
+      break;
+    case ARG_SPECS_TYPED:
+      for (i = 0; i < an->children.size; i++) {
+        found = 0;
+        for (j = 0; j < specs.count; j++) {
+          child = h_vec_get(&an->children, i);
+          if (!strncmp(specs.args[j].name, child->name.p, child->name.len) && specs.args[j].name[child->name.len] == '\0') {
+            child = h_vec_get(&an->children, ++i);
+            *specs.args[j].target = graph_expr_from_ast_put(g, child, elem_count);
+            found = 1;
+            break;
+          }
+        }
+
+        if (found) {
+          continue;
+        }
+
+        *specs.args[current++].target = graph_expr_from_ast_put(g, child, elem_count);
+      }
+
+      for (i = 0; i < specs.count; i++) {
+        if (0 == *specs.args[i].target) {
+          if (specs.args[i].required) {
+            fprintf(stderr, "missing required arg\n");
+          } else {
+            *specs.args[i].target = graph_literal(g, specs.args[i].def, elem_count);
+          }
         }
       }
-
-      if (found) {
-        continue;
-      }
-
-      *specs.args[current++].target = graph_expr_from_ast_put(g, child, elem_count);
-    }
-
-    for (i = 0; i < specs.count; i++) {
-      if (0 == *specs.args[i].target) {
-        if (specs.args[i].required) {
-          fprintf(stderr, "missing required arg\n");
-        } else {
-          *specs.args[i].target = graph_literal(g, specs.args[i].def, elem_count);
-        }
-      }
+      break;
     }
   } else {
     gn.type = H_NODE_VALUE;
