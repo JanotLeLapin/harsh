@@ -8,10 +8,13 @@ class HarshProcessor extends AudioWorkletProcessor {
     this.readIdx = 0
     this.writeIdx = 0
     this.underflowCount = 0
+    this.volume = 0.1
 
     this.port.onmessage = (e) => {
       if (e.data.samples) {
         this.enqueue(e.data.samples)
+      } else if (e.data.volume) {
+        this.volume = e.data.volume
       }
     }
   }
@@ -49,7 +52,7 @@ class HarshProcessor extends AudioWorkletProcessor {
     }
 
     for (let i = 0; i < needed; i++) {
-      out[i] = this.buffer[this.readIdx]
+      out[i] = this.buffer[this.readIdx] * this.volume
       this.readIdx = (this.readIdx + 1) % this.buffer.length
     }
 

@@ -8,6 +8,7 @@ document.querySelector('#app').innerHTML = `
       <div id="editor"></div>
       <button>Generate</button>
       <canvas width="1024px" height="256px"></canvas>
+      <input type="range" id="volume" name="volume" min="0" max="100" />
     </div>
   </div>
 `

@@ -106,6 +106,12 @@ export function setupAudio(element) {
     }
   }
 
+  function sendVolume(volume) {
+    if (workletNode) {
+      workletNode.port.postMessage({ volume })
+    }
+  }
+
   element.querySelector('button').addEventListener('click', () => {
     synth = editorView.state.doc.toString()
 
@@ -120,6 +126,10 @@ export function setupAudio(element) {
     for (let i = 0; i < 4; i++) {
       renderBlock()
     }
+  })
+
+  element.querySelector('#volume').addEventListener('change', (e) => {
+    sendVolume(e.target.value * 0.01)
   })
 
   initAudio()
