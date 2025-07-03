@@ -28,7 +28,9 @@ is_optimizable(h_graph_node_t *node)
     }
     break;
   case H_NODE_CMP:
-    if (!CHECK(node->data.cmp.left) || !CHECK(node->data.cmp.right))
+    if (!CHECK(node->data.cmp.left) || !CHECK(node->data.cmp.right)) {
+      return 0;
+    }
     break;
   case H_NODE_CONVERSION:
     if (!CHECK(node->data.conversion.input)) {
