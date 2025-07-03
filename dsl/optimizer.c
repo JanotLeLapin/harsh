@@ -80,6 +80,9 @@ h_dsl_optimize(h_hm_t *g)
         if (is_optimizable(node)) {
           optimized = 1;
           h_graph_process_node(g, node, &ctx);
+          if (H_NODE_MATH == node->type) {
+            h_vec_free(&node->data.math.values);
+          }
           node->type = H_NODE_VALUE;
           node->last_frame = 0;
           memset(&node->data, 0, sizeof(h_graph_node_data_t));
