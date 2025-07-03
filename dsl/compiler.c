@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef __EMSCRIPTEN__
+#include <sndfile.h>
+#endif
+
 #include "../harsh.h"
 #include "../dsl.h"
 
@@ -62,6 +66,42 @@ str_arr_includes(const char **expected, h_dsl_string_t str)
 
   return -1;
 }
+
+#ifndef __EMSCRIPTEN__
+static inline int
+load_audio(h_node_audio_t *data, const char *filename)
+{
+  SF_INFO sfinfo = {0};
+  SNDFILE *f;
+  sf_count_t read_count;
+
+  f = sf_open(filename, SFM_READ, &sfinfo);
+  if (0 == f) {
+    fprintf(stderr, "sf_open: %s\n", sf_strerror(NULL));
+    return -1;
+  }
+
+  data->sample_rate = (float) sfinfo.samplerate;
+  data->sample_count = (size_t) sfinfo.frames * sfinfo.channels;
+  data->samples = malloc(sizeof(float) * data->sample_count);
+  if (0 == data->samples) {
+    perror("malloc");
+    sf_close(f);
+    return -1;
+  }
+
+  read_count = sf_readf_float(f, data->samples, sfinfo.frames);
+  sf_close(f);
+  if (read_count != sfinfo.frames) {
+    fprintf(stderr, "sf_readf_float: incomplete read\n");
+    return -1;
+  }
+
+  data->current_sample = 0;
+  data->current_freq = 0.0f;
+  return 0;
+}
+#endif
 
 static inline int
 arg_spec(arg_specs_t *specs, const h_dsl_string_t str, h_graph_node_t *node)
@@ -165,7 +205,7 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
 {
   h_graph_node_t gn, *inserted, *node, *n_zero, *n_one;
   h_dsl_node_t *child;
-  char tmp[8];
+  char tmp[64];
   int res;
   arg_specs_t specs;
   size_t i, j, current = 0;
@@ -196,7 +236,18 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
     node = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count);
     h_vec_push(&gn.data.envelope.points, &node);
     h_vec_push(&gn.data.envelope.points, &n_zero);
-  } else if (1 == arg_spec(&specs, an->name, &gn)) {
+  }
+  #ifndef __EMSCRIPTEN__
+  else if (STR_EQ("audio", an->name)) {
+    gn.type = H_NODE_AUDIO;
+    child = h_vec_get(&an->children, 0);
+    memcpy(tmp, child->plain.p, child->plain.len);
+    tmp[child->plain.len - 1] = '\0';
+    load_audio(&gn.data.audio, tmp + 1);
+    gn.data.audio.length = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count);
+  }
+  #endif
+  else if (1 == arg_spec(&specs, an->name, &gn)) {
     switch (specs.type) {
     case ARG_SPECS_VARARG:
       h_vec_init(specs.target, 8, sizeof(h_graph_node_t **));

@@ -137,6 +137,17 @@ typedef struct {
   h_vec_t points;
 } h_node_envelope_t;
 
+#ifndef __EMSCRIPTEN__
+typedef struct {
+  float current_freq;
+  float sample_rate;
+  float *samples;
+  size_t current_sample;
+  size_t sample_count;
+  h_graph_node_t *length;
+} h_node_audio_t;
+#endif
+
 typedef enum {
   H_NODE_VALUE,
   H_NODE_MATH,
@@ -155,6 +166,10 @@ typedef enum {
   H_NODE_BITCRUSH,
 
   H_NODE_ENVELOPE,
+
+  #ifndef __EMSCRIPTEN__
+  H_NODE_AUDIO,
+  #endif
 } h_graph_node_type_t;
 
 typedef union {
@@ -175,6 +190,10 @@ typedef union {
   h_node_bitcrush_t bitcrush;
 
   h_node_envelope_t envelope;
+
+  #ifndef __EMSCRIPTEN__
+  h_node_audio_t audio;
+  #endif
 } h_graph_node_data_t;
 
 struct h_graph_node_s {

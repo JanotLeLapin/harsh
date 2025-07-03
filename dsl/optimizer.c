@@ -15,6 +15,9 @@ is_optimizable(h_graph_node_t *node)
   case H_NODE_NOISE:
   case H_NODE_OSC:
   case H_NODE_ENVELOPE:
+  #ifndef __EMSCRIPTEN__
+  case H_NODE_AUDIO:
+  #endif
     return 0;
   case H_NODE_MATH:
     for (i = 0; i < node->data.math.values.size; i++) {

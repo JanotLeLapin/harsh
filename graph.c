@@ -305,6 +305,28 @@ process_envelope_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   }
 }
 
+#ifndef __EMSCRIPTEN__
+static inline void
+process_audio_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
+{
+  h_node_audio_t *data = &node->data.audio;
+
+  h_graph_process_node(g, data->length, ctx);
+
+  if (data->current_sample > data->length->out * data->sample_rate) {
+    node->out = 0.0;
+    return;
+  }
+
+  data->current_freq += data->sample_rate;
+  if (data->current_freq < ctx->sr) {
+    return;
+  }
+
+  node->out = data->samples[data->current_sample++ * 2];
+}
+#endif
+
 void
 h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
@@ -345,6 +367,11 @@ h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   case H_NODE_ENVELOPE:
     process_envelope_node(g, node, ctx);
     break;
+  #ifndef __EMSCRIPTEN__
+  case H_NODE_AUDIO:
+    process_audio_node(g, node, ctx);
+    break;
+  #endif
   }
 
   node->last_frame = ctx->current_frame;
@@ -416,6 +443,12 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
       graph_preview("point:", g, *(h_graph_node_t **) h_vec_get(&node->data.envelope.points, i), depth + 1);
     }
     break;
+  #ifndef __EMSCRIPTEN__
+  case H_NODE_AUDIO:
+    fprintf(stderr, "(audio)\n");
+    graph_preview("length:", g, node->data.audio.length, depth + 1);
+    break;
+  #endif
   }
 }
 
@@ -455,6 +488,11 @@ h_graph_free(h_hm_t *g)
       case H_NODE_ENVELOPE:
         h_vec_free(&node->data.envelope.points);
         break;
+      #ifndef __EMSCRIPTEN__
+      case H_NODE_AUDIO:
+        free(node->data.audio.samples);
+        break;
+      #endif
       default:
         break;
       }
