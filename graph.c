@@ -334,6 +334,18 @@ process_envelope_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   }
 }
 
+static inline void
+process_pan_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
+{
+  h_node_pan_t *pan = &node->data.pan;
+
+  h_graph_process_node(g, pan->input, ctx);
+  h_graph_process_node(g, pan->alpha, ctx);
+
+  node->out[0] = pan->input->out[0] * (1 - fmaxf(0, pan->alpha->out[0]));
+  node->out[1] = pan->input->out[1] * (1 + fminf(0, pan->alpha->out[0]));
+}
+
 #ifndef __EMSCRIPTEN__
 static inline void
 process_audio_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
@@ -395,6 +407,9 @@ h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
     break;
   case H_NODE_BITCRUSH:
     process_bitcrush_node(g, node, ctx);
+    break;
+  case H_NODE_PAN:
+    process_pan_node(g, node, ctx);
     break;
   case H_NODE_ENVELOPE:
     process_envelope_node(g, node, ctx);
@@ -468,6 +483,11 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
     graph_preview("input:", g, node->data.bitcrush.input, depth + 1);
     graph_preview("target_freq:", g, node->data.bitcrush.target_freq, depth + 1);
     graph_preview("bits:", g, node->data.bitcrush.bits, depth + 1);
+    break;
+  case H_NODE_PAN:
+    fprintf(stderr, "(pan)\n");
+    graph_preview("input:", g, node->data.pan.input, depth + 1);
+    graph_preview("alpha:", g, node->data.pan.alpha, depth + 1);
     break;
   case H_NODE_ENVELOPE:
     fprintf(stderr, "(envelope)\n");

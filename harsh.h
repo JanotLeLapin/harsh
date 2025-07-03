@@ -133,6 +133,11 @@ typedef struct {
 } h_node_bitcrush_t;
 
 typedef struct {
+  h_graph_node_t *input;
+  h_graph_node_t *alpha;
+} h_node_pan_t;
+
+typedef struct {
   size_t current_idx;
   h_vec_t points;
 } h_node_envelope_t;
@@ -165,6 +170,8 @@ typedef enum {
 
   H_NODE_BITCRUSH,
 
+  H_NODE_PAN,
+
   H_NODE_ENVELOPE,
 
   #ifndef __EMSCRIPTEN__
@@ -188,6 +195,8 @@ typedef union {
   h_node_filter_t filter;
 
   h_node_bitcrush_t bitcrush;
+
+  h_node_pan_t pan;
 
   h_node_envelope_t envelope;
 

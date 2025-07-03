@@ -175,6 +175,13 @@ arg_spec(arg_specs_t *specs, const h_dsl_string_t str, h_graph_node_t *node)
     specs->args[2] = ARG_OPT(":bits", 16.0f, &node->data.bitcrush.bits);
     specs->count = 3;
     return 1;
+  } else if (STR_EQ("pan", str)) {
+    node->type = H_NODE_PAN;
+    specs->type = ARG_SPECS_TYPED;
+    specs->args[0] = ARG_REQ(":in", &node->data.pan.input);
+    specs->args[1] = ARG_OPT(":alpha", 0.0, &node->data.pan.alpha);
+    specs->count = 2;
+    return 1;
   } else if (STR_EQ("envelope", str)) {
     node->type = H_NODE_ENVELOPE;
     node->data.envelope.current_idx = 0;
