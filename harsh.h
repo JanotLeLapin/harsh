@@ -87,7 +87,7 @@ typedef struct {
 } h_node_conversion_t;
 
 typedef struct {
-  unsigned int state;
+  unsigned int state[2];
   h_graph_node_t *seed;
 } h_node_noise_t;
 
@@ -97,7 +97,7 @@ typedef struct {
     H_NODE_OSC_SQUARE,
     H_NODE_OSC_SAWTOOTH,
   } type;
-  float current;
+  float current[2];
   h_graph_node_t *freq;
   h_graph_node_t *phase;
 } h_node_osc_t;
@@ -118,15 +118,15 @@ typedef struct {
     H_NODE_FILTER_LOWPASS = 0,
     H_NODE_FILTER_HIGHPASS,
   } type;
-  float in[4];
-  float out[4];
+  float in[4][2];
+  float out[4][2];
   h_graph_node_t *cutoff;
   h_graph_node_t *stages;
   h_graph_node_t *input;
 } h_node_filter_t;
 
 typedef struct {
-  float current_freq;
+  float current_freq[2];
   h_graph_node_t *input;
   h_graph_node_t *target_freq;
   h_graph_node_t *bits;
@@ -198,7 +198,7 @@ typedef union {
 
 struct h_graph_node_s {
   char name[32];
-  float out;
+  float out[2];
   size_t last_frame;
   h_graph_node_type_t type;
   h_graph_node_data_t data;

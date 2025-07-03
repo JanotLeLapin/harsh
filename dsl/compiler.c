@@ -191,7 +191,8 @@ graph_literal(h_hm_t *g, float value, size_t *elem_count)
 {
   h_graph_node_t *res = malloc(sizeof(h_graph_node_t));
   res->type = H_NODE_VALUE;
-  res->out = value;
+  res->out[0] = value;
+  res->out[1] = value;
   res->last_frame = 0;
   snprintf(res->name, sizeof(res->name), "_anon_%ld", (*elem_count)++);
 
@@ -212,7 +213,8 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
   char found;
 
   snprintf(gn.name, sizeof(gn.name), "_anon_%ld", (*elem_count)++);
-  gn.out = 0.0f;
+  gn.out[0] = 0.0f;
+  gn.out[1] = 0.0f;
   gn.last_frame = 0;
   memset(&gn.data, 0, sizeof(h_graph_node_data_t));
 
@@ -291,7 +293,8 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
     gn.type = H_NODE_VALUE;
     memcpy(tmp, an->name.p, an->name.len);
     tmp[an->name.len] = '\0';
-    gn.out = strtof(tmp, 0);
+    gn.out[0] = strtof(tmp, 0);
+    gn.out[1] = gn.out[0];
   }
 
   inserted = malloc(sizeof(h_graph_node_t));

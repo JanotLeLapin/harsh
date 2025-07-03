@@ -19,7 +19,7 @@ h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t sam
   SNDFILE *f;
   size_t i;
 
-  buf = malloc(sizeof(float) * buf_size);
+  buf = malloc(sizeof(float) * buf_size * 2);
   if (0 == buf) {
     perror("malloc");
     return -1;
@@ -29,7 +29,7 @@ h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t sam
 
   sfinfo.frames = sample_count;
   sfinfo.samplerate = ctx->sr;
-  sfinfo.channels = 1;
+  sfinfo.channels = 2;
   sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
   f = sf_open(filename, SFM_WRITE, &sfinfo);

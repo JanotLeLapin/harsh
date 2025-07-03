@@ -10,66 +10,70 @@ static inline void
 process_math_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_math_t data = node->data.math;
-  size_t i = 0;
+  size_t i, j;
   h_graph_node_t *elem;
 
-  switch (data.op) {
-  case H_NODE_MATH_ADD:
-    node->out = 0.0f;
-    break;
-  case H_NODE_MATH_MUL:
-    node->out = 1.0f;
-    break;
-  case H_NODE_MATH_DIV:
-  case H_NODE_MATH_POW:
-    elem = *(h_graph_node_t **) h_vec_get(&data.values, i++);
-    h_graph_process_node(g, elem, ctx);
-    node->out = elem->out;
-    break;
-  case H_NODE_MATH_SUB:
-    if (data.values.size > 1) {
-      elem = *(h_graph_node_t **) h_vec_get(&data.values, i++);
-      h_graph_process_node(g, elem, ctx);
-      node->out = elem->out;
-    } else {
-      node->out = 0.0f;
-    }
-    break;
-  default:
-    break;
-  }
+  for (i = 0; i < 2; i++) {
+    j = 0;
 
-  for (; i < data.values.size; i++) {
-    elem = *(h_graph_node_t **) h_vec_get(&data.values, i);
-    h_graph_process_node(g, elem, ctx);
     switch (data.op) {
     case H_NODE_MATH_ADD:
-      node->out += elem->out;
-      break;
-    case H_NODE_MATH_SUB:
-      node->out -= elem->out;
+      node->out[i] = 0.0f;
       break;
     case H_NODE_MATH_MUL:
-      node->out *= elem->out;
+      node->out[i] = 1.0f;
       break;
     case H_NODE_MATH_DIV:
-      node->out = 0.0f == elem->out ? 0.0f : node->out / elem->out;
-      break;
     case H_NODE_MATH_POW:
-      node->out = powf(node->out, elem->out);
+      elem = *(h_graph_node_t **) h_vec_get(&data.values, j++);
+      h_graph_process_node(g, elem, ctx);
+      node->out[i] = elem->out[i];
       break;
-    case H_NODE_MATH_LOGN:
-      node->out = elem->out < 0.0f ? 0.0f : logf(elem->out);
+    case H_NODE_MATH_SUB:
+      if (data.values.size > 1) {
+        elem = *(h_graph_node_t **) h_vec_get(&data.values, j++);
+        h_graph_process_node(g, elem, ctx);
+        node->out[i] = elem->out[i];
+      } else {
+        node->out[i] = 0.0f;
+      }
       break;
-    case H_NODE_MATH_LOG2:
-      node->out = elem->out < 0.0f ? 0.0f : log2f(elem->out);
+    default:
       break;
-    case H_NODE_MATH_LOG10:
-      node->out = elem->out < 0.0f ? 0.0f : log10f(elem->out);
-      break;
-    case H_NODE_MATH_EXP:
-      node->out = expf(elem->out);
-      break;
+    }
+
+    for (; j < data.values.size; j++) {
+      elem = *(h_graph_node_t **) h_vec_get(&data.values, j);
+      h_graph_process_node(g, elem, ctx);
+      switch (data.op) {
+      case H_NODE_MATH_ADD:
+        node->out[i] += elem->out[i];
+        break;
+      case H_NODE_MATH_SUB:
+        node->out[i] -= elem->out[i];
+        break;
+      case H_NODE_MATH_MUL:
+        node->out[i] *= elem->out[i];
+        break;
+      case H_NODE_MATH_DIV:
+        node->out[i] = 0.0f == elem->out[i] ? 0.0f : node->out[i] / elem->out[i];
+        break;
+      case H_NODE_MATH_POW:
+        node->out[i] = powf(node->out[i], elem->out[i]);
+        break;
+      case H_NODE_MATH_LOGN:
+        node->out[i] = elem->out[i] < 0.0f ? 0.0f : logf(elem->out[i]);
+        break;
+      case H_NODE_MATH_LOG2:
+        node->out[i] = elem->out[i] < 0.0f ? 0.0f : log2f(elem->out[i]);
+        break;
+      case H_NODE_MATH_LOG10:
+        node->out[i] = elem->out[i] < 0.0f ? 0.0f : log10f(elem->out[i]);
+        break;
+      case H_NODE_MATH_EXP:
+        node->out[i] = expf(elem->out[i]);
+        break;
+      }
     }
   }
 }
@@ -78,55 +82,61 @@ static inline void
 process_cmp_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_cmp_t data = node->data.cmp;
+  size_t i;
   char res;
 
   h_graph_process_node(g, data.left, ctx);
   h_graph_process_node(g, data.right, ctx);
 
-  switch (data.op) {
-  case H_NODE_CMP_LT:
-    res = data.left->out < data.right->out;
-    break;
-  case H_NODE_CMP_LEQT:
-    res = data.left->out <= data.right->out;
-    break;
-  case H_NODE_CMP_GT:
-    res = data.left->out > data.right->out;
-    break;
-  case H_NODE_CMP_GEQT:
-    res = data.left->out >= data.right->out;
-    break;
-  case H_NODE_CMP_EQ:
-    res = data.left->out == data.right->out;
-    break;
-  case H_NODE_CMP_NEQ:
-    res = data.left->out != data.right->out;
-    break;
-  }
+  for (i = 0; i < 2; i++) {
+    switch (data.op) {
+    case H_NODE_CMP_LT:
+      res = data.left->out[i] < data.right->out[i];
+      break;
+    case H_NODE_CMP_LEQT:
+      res = data.left->out[i] <= data.right->out[i];
+      break;
+    case H_NODE_CMP_GT:
+      res = data.left->out[i] > data.right->out[i];
+      break;
+    case H_NODE_CMP_GEQT:
+      res = data.left->out[i] >= data.right->out[i];
+      break;
+    case H_NODE_CMP_EQ:
+      res = data.left->out[i] == data.right->out[i];
+      break;
+    case H_NODE_CMP_NEQ:
+      res = data.left->out[i] != data.right->out[i];
+      break;
+    }
 
-  node->out = res ? 1.0f : 0.0f;
+    node->out[i] = res ? 1.0f : 0.0f;
+  }
 }
 
 static inline void
 process_conversion_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_conversion_t data = node->data.conversion;
+  size_t i;
 
   h_graph_process_node(g, data.input, ctx);
 
-  switch (data.op) {
-  case H_NODE_CONVERSION_MTOF:
-    node->out = 440.0f * powf(2.0f, (data.input->out - 69.0f) / 12.0f);
-    break;
-  case H_NODE_CONVERSION_FTOM:
-    node->out = 69.0f + 12.0f * log2f(data.input->out / 440.0f);
-    break;
-  case H_NODE_CONVERSION_DTOA:
-    node->out = 20.0f * log10f(data.input->out);
-    break;
-  case H_NODE_CONVERSION_ATOD:
-    node->out = powf(10.0f, node->out / 20.0f);
-    break;
+  for (i = 0; i < 2; i++) {
+    switch (data.op) {
+    case H_NODE_CONVERSION_MTOF:
+      node->out[i] = 440.0f * powf(2.0f, (data.input->out[i] - 69.0f) / 12.0f);
+      break;
+    case H_NODE_CONVERSION_FTOM:
+      node->out[i] = 69.0f + 12.0f * log2f(data.input->out[i] / 440.0f);
+      break;
+    case H_NODE_CONVERSION_DTOA:
+      node->out[i] = 20.0f * log10f(data.input->out[i]);
+      break;
+    case H_NODE_CONVERSION_ATOD:
+      node->out[i] = powf(10.0f, node->out[i] / 20.0f);
+      break;
+    }
   }
 }
 
@@ -144,42 +154,49 @@ static inline void
 process_noise_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_noise_t *data = &node->data.noise;
+  size_t i;
 
   h_graph_process_node(g, data->seed, ctx);
-  data->state ^= (unsigned int) data->seed->out;
 
-  float u1 = ((float) xorshift32(&data->state) + 1.0f) / ((float) UINT32_MAX + 2.0f);
-  float u2 = ((float) xorshift32(&data->state) + 1.0f) / ((float) UINT32_MAX + 2.0f);
-  node->out = sqrtf(-2.0f * logf(u1)) * cosf(2.0f * M_PI * u2);
+  for (i = 0; i < 2; i++) {
+    data->state[i] ^= (unsigned int) data->seed->out[i];
+
+    float u1 = ((float) xorshift32(&data->state[i]) + 1.0f) / ((float) UINT32_MAX + 2.0f);
+    float u2 = ((float) xorshift32(&data->state[i]) + 1.0f) / ((float) UINT32_MAX + 2.0f);
+    node->out[i] = sqrtf(-2.0f * logf(u1)) * cosf(2.0f * M_PI * u2);
+  }
 }
 
 static inline void
 process_osc_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_osc_t *data = &node->data.osc;
+  size_t i;
 
   h_graph_process_node(g, data->freq, ctx);
   h_graph_process_node(g, data->phase, ctx);
 
-  switch (data->type) {
-  case H_NODE_OSC_SINE:
-    node->out = sinf(data->current + data->phase->out);
-    data->current += 2.0f * M_PI * data->freq->out / ctx->sr;
-    data->current = fmod(data->current, 2.0f * M_PI);
-    if (data->current < 0.0f) data->current += 2.0f * M_PI;
-    break;
-  case H_NODE_OSC_SQUARE:
-    node->out = (data->current + data->phase->out < 0.5 ? -1.0f : 1.0f);
-    data->current += data->freq->out / ctx->sr;
-    data->current = fmodf(data->current, 1.0f);
-    if (data->current < 0.0f) data->current += 1.0f;
-    break;
-  case H_NODE_OSC_SAWTOOTH:
-    node->out = (1.0f - 2.0f + data->phase->out);
-    data->current += data->freq->out / ctx->sr;
-    data->current = fmodf(data->current, 1.0f);
-    if (data->current < 0.0f) data->current += 1.0f;
-    break;
+  for (i = 0; i < 2; i++) {
+    switch (data->type) {
+    case H_NODE_OSC_SINE:
+      node->out[i] = sinf(data->current[i] + data->phase->out[i]);
+      data->current[i] += 2.0f * M_PI * data->freq->out[i] / ctx->sr;
+      data->current[i] = fmod(data->current[i], 2.0f * M_PI);
+      if (data->current[i] < 0.0f) data->current[i] += 2.0f * M_PI;
+      break;
+    case H_NODE_OSC_SQUARE:
+      node->out[i] = (data->current[i] + data->phase->out[i] < 0.5 ? -1.0f : 1.0f);
+      data->current[i] += data->freq->out[i] / ctx->sr;
+      data->current[i] = fmodf(data->current[i], 1.0f);
+      if (data->current[i] < 0.0f) data->current[i] += 1.0f;
+      break;
+    case H_NODE_OSC_SAWTOOTH:
+      node->out[i] = (1.0f - 2.0f + data->phase->out[i]);
+      data->current[i] += data->freq->out[i] / ctx->sr;
+      data->current[i] = fmodf(data->current[i], 1.0f);
+      if (data->current[i] < 0.0f) data->current[i] += 1.0f;
+      break;
+    }
   }
 }
 
@@ -187,29 +204,33 @@ static inline void
 process_diode_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_graph_process_node(g, node->data.diode, ctx);
-  node->out = log1pf(expf(node->data.diode->out));
+  node->out[0] = log1pf(expf(node->data.diode->out[0]));
+  node->out[1] = log1pf(expf(node->data.diode->out[1]));
 }
 
 static inline void
 process_hardclip_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_clip_t data = node->data.clip;
+  size_t i;
 
   h_graph_process_node(g, data.threshold, ctx);
   h_graph_process_node(g, data.input, ctx);
 
-  switch (data.type) {
-  case H_NODE_CLIP_HARDCLIP:
-    node->out = fminf(fmaxf(data.input->out, -data.threshold->out), data.threshold->out);
-    break;
-  case H_NODE_CLIP_FOLDBACK:
-    /* https://www.musicdsp.org/en/latest/Effects/203-fold-back-distortion.html */
-    if (data.input->out > data.threshold->out || data.input->out < -data.threshold->out) {
-      node->out = fabsf(fabsf(fmodf(data.input->out, data.threshold->out * 4)) - data.threshold->out * 2) - data.threshold->out;
-    } else {
-      node->out = data.input->out;
+  for (i = 0; i < 2; i++) {
+    switch (data.type) {
+    case H_NODE_CLIP_HARDCLIP:
+      node->out[i] = fminf(fmaxf(data.input->out[i], -data.threshold->out[i]), data.threshold->out[i]);
+      break;
+    case H_NODE_CLIP_FOLDBACK:
+      /* https://www.musicdsp.org/en/latest/Effects/203-fold-back-distortion.html */
+      if (data.input->out[i] > data.threshold->out[i] || data.input->out[i] < -data.threshold->out[i]) {
+        node->out[i] = fabsf(fabsf(fmodf(data.input->out[i], data.threshold->out[i] * 4)) - data.threshold->out[i] * 2) - data.threshold->out[i];
+      } else {
+        node->out[i] = data.input->out[i];
+      }
+      break;
     }
-    break;
   }
 }
 
@@ -218,7 +239,8 @@ process_filter_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_filter_t *data;
   float a, stage_in;
-  int stages, i;
+  size_t i, j;
+  int stages;
 
   data = &node->data.filter;
 
@@ -226,81 +248,88 @@ process_filter_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   h_graph_process_node(g, data->stages, ctx);
   h_graph_process_node(g, data->cutoff, ctx);
 
-  a = expf(-2.0f * M_PI * data->cutoff->out / ctx->sr);
-  stages = (int) roundf(fmax(1.0, fmin(4.0, data->stages->out)));
-  switch (data->type) {
-  case H_NODE_FILTER_LOWPASS:
-    stage_in = data->input->out;
-    for (i = 0; i < stages; i++) {
-      data->out[i] = (1 - a) * stage_in + a * data->out[i];
-      stage_in = data->out[i];
+  for (i = 0; i < 2; i++) {
+    a = expf(-2.0f * M_PI * data->cutoff->out[i] / ctx->sr);
+    stages = (int) roundf(fmax(1.0, fmin(4.0, data->stages->out[i])));
+    switch (data->type) {
+    case H_NODE_FILTER_LOWPASS:
+      stage_in = data->input->out[i];
+      for (j = 0; j < stages; j++) {
+        data->out[i][j] = (1 - a) * stage_in + a * data->out[i][j];
+        stage_in = data->out[i][j];
+      }
+      break;
+    case H_NODE_FILTER_HIGHPASS:
+      stage_in = data->input->out[i];
+      for (j = 0; j < stages; j++) {
+        data->out[i][j] = a * (data->out[i][j]) + stage_in - data->in[i][j];
+        data->in[i][j] = stage_in;
+        stage_in = data->out[i][j];
+      }
+      break;
     }
-    break;
-  case H_NODE_FILTER_HIGHPASS:
-    stage_in = data->input->out;
-    for (i = 0; i < stages; i++) {
-      data->out[i] = a * (data->out[i]) + stage_in - data->in[i];
-      data->in[i] = stage_in;
-      stage_in = data->out[i];
-    }
-    break;
+    node->out[i] = data->out[i][j - 1];
   }
-  node->out = data->out[i - 1];
 }
 
 static inline void
 process_bitcrush_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_bitcrush_t *data = &node->data.bitcrush;
+  size_t i;
   float levels, norm, quantized;
 
   h_graph_process_node(g, data->input, ctx);
   h_graph_process_node(g, data->target_freq, ctx);
   h_graph_process_node(g, data->bits, ctx);
 
-  data->current_freq += data->target_freq->out;
-  if (data->current_freq < ctx->sr) {
-    return;
-  }
-  data->current_freq -= ctx->sr;
+  for (i = 0; i < 2; i++) {
+    data->current_freq[i] += data->target_freq->out[i];
+    if (data->current_freq[i] < ctx->sr) {
+      continue;
+    }
+    data->current_freq[i] -= ctx->sr;
 
-  levels = powf(2.0f, data->bits->out);
-  if (levels <= 1.0f) {
-    node->out = 0.0f;
-    return;
-  }
+    levels = powf(2.0f, data->bits->out[i]);
+    if (levels <= 1.0f) {
+      node->out[i] = 0.0f;
+      continue;
+    }
 
-  norm = (data->input->out + 1.0f) * 0.5f;
-  quantized = floorf(norm * levels) / (levels - 1.0f);
-  node->out = quantized * 2.0f - 1.0f;
+    norm = (data->input->out[i] + 1.0f) * 0.5f;
+    quantized = floorf(norm * levels) / (levels - 1.0f);
+    node->out[i] = quantized * 2.0f - 1.0f;
+  }
 }
 
 static inline void
 process_envelope_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   float time;
-  size_t i;
+  size_t i, j;
   h_node_envelope_t *data;
   h_graph_node_t *t0, *p0, *t1, *p1;
 
   time = (ctx->current_frame / ctx->sr) * 1000.0f;
 
   data = &node->data.envelope;
-  for (i = 0; i < data->points.size; i++) {
-    p0 = *(h_graph_node_t **) h_vec_get(&data->points, i);
+  for (j = 0; j < data->points.size; j++) {
+    p0 = *(h_graph_node_t **) h_vec_get(&data->points, j);
     h_graph_process_node(g, p0, ctx);
   }
 
-  for (size_t i = data->current_idx; i <= data->points.size - 4; i += 2) {
-    t0 = *(h_graph_node_t **) h_vec_get(&data->points, i);
-    p0 = *(h_graph_node_t **) h_vec_get(&data->points, i + 1);
-    t1 = *(h_graph_node_t **) h_vec_get(&data->points, i + 2);
-    p1 = *(h_graph_node_t **) h_vec_get(&data->points, i + 3);
+  for (i = 0; i < 2; i++) {
+    for (size_t j = data->current_idx; j <= data->points.size - 4; j += 2) {
+      t0 = *(h_graph_node_t **) h_vec_get(&data->points, j);
+      p0 = *(h_graph_node_t **) h_vec_get(&data->points, j + 1);
+      t1 = *(h_graph_node_t **) h_vec_get(&data->points, j + 2);
+      p1 = *(h_graph_node_t **) h_vec_get(&data->points, j + 3);
 
-    if (time >= t0->out && time < t1->out) {
-      node->out = p0->out + (time - t0->out) / (t1->out - t0->out) * (p1->out - p0->out);
-      data->current_idx = i;
-      return;
+      if (time >= t0->out[i] && time < t1->out[i]) {
+        node->out[i] = p0->out[i] + (time - t0->out[i]) / (t1->out[i] - t0->out[i]) * (p1->out[i] - p0->out[i]);
+        data->current_idx = j;
+        continue;
+      }
     }
   }
 }
@@ -310,20 +339,23 @@ static inline void
 process_audio_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
   h_node_audio_t *data = &node->data.audio;
+  size_t i;
 
   h_graph_process_node(g, data->length, ctx);
 
-  if (data->current_sample > data->length->out * data->sample_rate) {
-    node->out = 0.0;
-    return;
-  }
+  for (i = 0; i < 2; i++) {
+    if (data->current_sample > data->length->out[i] * data->sample_rate) {
+      node->out[i] = 0.0;
+      continue;
+    }
 
-  data->current_freq += data->sample_rate;
-  if (data->current_freq < ctx->sr) {
-    return;
-  }
+    data->current_freq += data->sample_rate;
+    if (data->current_freq < ctx->sr) {
+      continue;
+    }
 
-  node->out = data->samples[data->current_sample++ * 2];
+    node->out[i] = data->samples[data->current_sample++];
+  }
 }
 #endif
 
@@ -391,7 +423,7 @@ graph_preview(const char *prefix, h_hm_t *g, h_graph_node_t *node, size_t depth)
 
   switch (node->type) {
   case H_NODE_VALUE:
-    fprintf(stderr, "(literal %f)\n", node->out);
+    fprintf(stderr, "(literal %f)\n", node->out[0]);
     break;
   case H_NODE_MATH:
     fprintf(stderr, "(math, %s)\n", H_OP_MATH[node->data.math.op]);
@@ -463,9 +495,10 @@ h_graph_render_block(h_hm_t *g, h_graph_node_t *out, h_context *ctx, float *buf,
 {
   size_t i;
 
-  for (i = 0; i < buf_size; i++) {
+  for (i = 0; i < buf_size; i += 2) {
     h_graph_process_node(g, out, ctx);
-    buf[i] = out->out;
+    buf[i] = out->out[0];
+    buf[i + 1] = out->out[1];
     ctx->current_frame++;
   }
 }
