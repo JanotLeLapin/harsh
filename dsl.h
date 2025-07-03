@@ -1,6 +1,8 @@
 #ifndef _H_HARSH_DSL
 #define _H_HARSH_DSL
 
+#define MAX_ARGS 16
+
 #include <stdlib.h>
 
 #include "harsh.h"
@@ -24,6 +26,7 @@ typedef struct {
 
 int h_dsl_parse(h_dsl_node_t *root, const char *src, size_t len);
 int h_dsl_compile(h_hm_t *g, h_dsl_node_t *root);
+int h_dsl_optimize(h_hm_t *g);
 
 void h_dsl_free_node(h_dsl_node_t *node);
 

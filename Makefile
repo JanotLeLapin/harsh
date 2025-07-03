@@ -6,10 +6,10 @@ EMCC = emcc
 LDFLAGS_WASM = -lm -s ALLOW_MEMORY_GROWTH=1
 CFLAGS_WASM = -Wall -Wextra -O3
 
-SRCS = harsh.c graph.c dsl/parser.c dsl/compiler.c hm.c vec.c
+SRCS = harsh.c graph.c dsl/parser.c dsl/compiler.c dsl/optimizer.c hm.c vec.c
 OBJS = $(SRCS:.c=.o)
 
-SRCS_WASM = wrapper.c graph.c dsl/parser.c dsl/compiler.c hm.c vec.c
+SRCS_WASM = wrapper.c graph.c dsl/parser.c dsl/compiler.c dsl/optimizer.c hm.c vec.c
 OBJS_WASM = $(SRCS_WASM:.c=.wasm.o)
 
 TARGET = harsh

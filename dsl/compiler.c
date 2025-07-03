@@ -20,7 +20,7 @@ typedef struct {
 } arg_spec_t;
 
 typedef struct {
-  arg_spec_t args[16];
+  arg_spec_t args[MAX_ARGS];
   size_t count;
 } arg_specs_t;
 
@@ -254,4 +254,6 @@ h_dsl_load(h_hm_t *g, const char *src, size_t src_len)
     graph_from_ast(g, h_vec_get(&root.children, i), &elem_count);
   }
   h_dsl_free_node(&root);
+
+  h_dsl_optimize(g);
 }
