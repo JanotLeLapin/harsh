@@ -1,10 +1,10 @@
-const BLOCK_SIZE = 512
-const REQUEST_THRESHOLD = BLOCK_SIZE * 2
+const BLOCK_SIZE = 128
+const REQUEST_THRESHOLD = BLOCK_SIZE * 32
 
 class HarshProcessor extends AudioWorkletProcessor {
   constructor() {
     super()
-    this.buffer = new Float32Array(BLOCK_SIZE * 8)
+    this.buffer = new Float32Array(BLOCK_SIZE * 64)
     this.readIdx = 0
     this.writeIdx = 0
     this.underflowCount = 0
@@ -37,8 +37,7 @@ class HarshProcessor extends AudioWorkletProcessor {
   }
 
   process(_, outputs) {
-    const out = outputs[0][0]
-    const needed = out.length
+    const needed = outputs[0][0].length
 
     if (this.usedSpace() < REQUEST_THRESHOLD) {
       this.port.postMessage({ type: 'requestBlock' })
@@ -47,13 +46,17 @@ class HarshProcessor extends AudioWorkletProcessor {
     if (this.usedSpace() < needed) {
       this.underflowCount++
       console.warn('UNDERFLOW!')
-      out.fill(0)
+      outputs[0].forEach((channel) => {
+        channel.fill(0)
+      })
       return true
     }
 
     for (let i = 0; i < needed; i++) {
-      out[i] = this.buffer[this.readIdx] * this.volume
-      this.readIdx = (this.readIdx + 1) % this.buffer.length
+      outputs[0].forEach((channel) => {
+        channel[i] = this.buffer[this.readIdx] * this.volume
+        this.readIdx = (this.readIdx + 1) % this.buffer.length
+      })
     }
 
     return true

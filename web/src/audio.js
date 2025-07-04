@@ -5,7 +5,7 @@ import { HarshGraph } from './harsh';
 const CANVAS_WIDTH = 1024
 const CANVAS_HEIGHT = 256
 
-const BLOCK_SIZE = 512
+const BLOCK_SIZE = 128
 
 export function setupAudio(element) {
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
@@ -50,7 +50,7 @@ export function setupAudio(element) {
 
   element.querySelector('#editor').appendChild(editorView.dom)
 
-  const samples = new Float32Array(BLOCK_SIZE)
+  const samples = new Float32Array(BLOCK_SIZE * 2)
 
   console.log('setting up audio')
 
@@ -68,10 +68,10 @@ export function setupAudio(element) {
     ctx.beginPath()
     ctx.fillStyle = 'blue'
     ctx.moveTo(0, CANVAS_HEIGHT / 2)
-    for (let i = 0; i < samples.length; i++) {
+    for (let i = 0; i < BLOCK_SIZE; i++) {
       ctx.lineTo(
-        i / samples.length * CANVAS_WIDTH,
-        CANVAS_HEIGHT - ((samples[i] * 0.5 + 0.5) * CANVAS_HEIGHT),
+        i / BLOCK_SIZE * CANVAS_WIDTH,
+        CANVAS_HEIGHT - ((samples[i * 2] * 0.5 + 0.5) * CANVAS_HEIGHT),
       )
     }
     ctx.stroke()
@@ -85,7 +85,13 @@ export function setupAudio(element) {
 
   async function initAudio() {
     await audioCtx.audioWorklet.addModule(import.meta.env.BASE_URL + '/harsh-processor.js')
-    workletNode = new AudioWorkletNode(audioCtx, 'harsh-processor')
+    workletNode = new AudioWorkletNode(audioCtx, 'harsh-processor', {
+      outputChannelCount: [2],
+      numberOfInputs: 0,
+      numberOfOutputs: 1,
+      channelCount: 2,
+      channelCountMode: 'explicit',
+    })
     workletNode.port.onmessage = (e) => {
       if (e.data.type === 'requestBlock') {
         renderBlock()

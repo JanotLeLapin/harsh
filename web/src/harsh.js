@@ -41,9 +41,9 @@ export class HarshGraph {
     const ctxPtr = window.Module._malloc(ctxSize)
     window.Module.ccall('w_context_init', null, ['number', 'number'], [ctxPtr, sampleRate])
 
-    const bufPtr = window.Module._malloc(4 * bufSize)
+    const bufPtr = window.Module._malloc(2 * 4 * bufSize)
 
-    const renderBlock = window.Module.cwrap('w_graph_render_block', null, ['number', 'number', 'number', 'number', 'number'])
+    const renderBlock = window.Module.cwrap('w_graph_render_block', null, ['number', 'number', 'number', 'number'])
 
     return new HarshGraph(graphPtr, bufPtr, bufSize, ctxPtr, outPtr, srcPtr, renderBlock)
   }
@@ -52,8 +52,8 @@ export class HarshGraph {
    * @param {Float32Array} samples 
    */
   render(samples) {
-    this.renderBlock(this.graphPtr, this.outPtr, this.ctxPtr, this.bufPtr, this.bufSize)
-    samples.set(new Float32Array(window.Module.HEAPF32.buffer, this.bufPtr, this.bufSize))
+    this.renderBlock(this.graphPtr, this.outPtr, this.ctxPtr, this.bufPtr)
+    samples.set(new Float32Array(window.Module.HEAPF32.buffer, this.bufPtr, this.bufSize * 2))
   }
 
   free() {
