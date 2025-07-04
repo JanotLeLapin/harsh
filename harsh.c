@@ -11,7 +11,7 @@
 #include "harsh.h"
 
 int
-h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t sample_count, size_t buf_size)
+h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t block_count)
 {
   float *buf;
   h_graph_node_t *out;
@@ -19,7 +19,7 @@ h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t sam
   SNDFILE *f;
   size_t i;
 
-  buf = malloc(sizeof(float) * buf_size * 2);
+  buf = malloc(sizeof(float) * BLOCK_SIZE * 2);
   if (0 == buf) {
     perror("malloc");
     return -1;
@@ -27,7 +27,7 @@ h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t sam
 
   out = h_hm_get(g, "output");
 
-  sfinfo.frames = sample_count;
+  sfinfo.frames = block_count * BLOCK_SIZE;
   sfinfo.samplerate = ctx->sr;
   sfinfo.channels = 2;
   sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
@@ -38,9 +38,14 @@ h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t sam
     return -1;
   }
 
-  while (ctx->current_frame < sample_count) {
-    h_graph_render_block(g, out, ctx, buf, buf_size);
-    sf_write_float(f, buf, buf_size);
+  while (ctx->current_block < block_count) {
+    h_graph_process_node(g, out, ctx);
+    for (i = 0; i < BLOCK_SIZE; i++) {
+      buf[i * 2] = out->out[0][i];
+      buf[i * 2 + 1] = out->out[1][i];
+    }
+    sf_writef_float(f, buf, BLOCK_SIZE);
+    ctx->current_block++;
   }
 
   sf_close(f);
@@ -68,7 +73,7 @@ main(int argc, char **argv)
     filename = argv[1];
   }
 
-  ctx.current_frame = 0;
+  ctx.current_block = 0;
   ctx.sr = 44100.0f;
 
   for (i = 2; i < argc; i++) {
@@ -93,7 +98,7 @@ main(int argc, char **argv)
   h_graph_preview(&graph);
 
   start = clock();
-  if (-1 == h_graph_render_wav32("out.wav", &graph, &ctx, 512 * 1000, 512)) {
+  if (-1 == h_graph_render_wav32("out.wav", &graph, &ctx, 4000)) {
     fprintf(stderr, "could not render graph\n");
   }
   end = clock();

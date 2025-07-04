@@ -83,6 +83,7 @@ load_audio(h_node_audio_t *data, const char *filename)
 
   data->sample_rate = (float) sfinfo.samplerate;
   data->sample_count = (size_t) sfinfo.frames * sfinfo.channels;
+  data->channel_count = (size_t) sfinfo.channels;
   data->samples = malloc(sizeof(float) * data->sample_count);
   if (0 == data->samples) {
     perror("malloc");
@@ -197,10 +198,14 @@ static inline h_graph_node_t *
 graph_literal(h_hm_t *g, float value, size_t *elem_count)
 {
   h_graph_node_t *res = malloc(sizeof(h_graph_node_t));
+  size_t i;
+
   res->type = H_NODE_VALUE;
-  res->out[0] = value;
-  res->out[1] = value;
-  res->last_frame = 0;
+  for (i = 0; i < BLOCK_SIZE; i++) {
+    res->out[0][i] = value;
+    res->out[1][i] = value;
+  }
+  res->last_block = 0;
   snprintf(res->name, sizeof(res->name), "_anon_%ld", (*elem_count)++);
 
   h_hm_put(g, res->name, res);
@@ -220,9 +225,8 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
   char found;
 
   snprintf(gn.name, sizeof(gn.name), "_anon_%ld", (*elem_count)++);
-  gn.out[0] = 0.0f;
-  gn.out[1] = 0.0f;
-  gn.last_frame = 0;
+  gn.last_block = 0;
+  memset(gn.out, 0, BLOCK_SIZE * 2);
   memset(&gn.data, 0, sizeof(h_graph_node_data_t));
 
   if (STR_EQ("ref", an->name)) {
@@ -300,8 +304,12 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
     gn.type = H_NODE_VALUE;
     memcpy(tmp, an->name.p, an->name.len);
     tmp[an->name.len] = '\0';
-    gn.out[0] = strtof(tmp, 0);
-    gn.out[1] = gn.out[0];
+    gn.out[0][0] = strtof(tmp, 0);
+    for (i = 0; i < BLOCK_SIZE; i++) {
+      gn.out[0][i] = gn.out[0][0];
+      gn.out[1][i] = gn.out[0][0];
+    }
+    fprintf(stderr, "literal: %f\n", gn.out[0][0]);
   }
 
   inserted = malloc(sizeof(h_graph_node_t));

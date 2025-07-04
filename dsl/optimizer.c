@@ -70,7 +70,7 @@ h_dsl_optimize(h_hm_t *g)
   size_t i;
   h_hm_entry_t *entry;
   h_graph_node_t *node, *new;
-  h_context ctx = { .current_frame = 1, .sr = 44100.0 };
+  h_context ctx = { .current_block = 0, .sr = 44100.0 };
 
   do {
     optimized = 0;
@@ -85,7 +85,7 @@ h_dsl_optimize(h_hm_t *g)
             h_vec_free(&node->data.math.values);
           }
           node->type = H_NODE_VALUE;
-          node->last_frame = 0;
+          node->last_block = 0;
           memset(&node->data, 0, sizeof(h_graph_node_data_t));
         }
         entry = entry->next;

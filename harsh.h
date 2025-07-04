@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define BLOCK_SIZE 128
+
 static const char *H_OP_MATH[] = { "+", "-", "*", "/", "pow", "log", "log2", "log10", "exp", 0 };
 static const char *H_OP_CMP[] = { "<", "<=", ">", ">=", "=", "!=", 0 };
 static const char *H_OP_CONVERSION[] = { "midi->freq", "freq->midi", "db->amp", "amp->db", 0 };
@@ -39,7 +41,7 @@ typedef struct {
 
 /* core */
 typedef struct {
-  size_t current_frame;
+  size_t current_block;
   float sr;
 } h_context;
 
@@ -127,6 +129,7 @@ typedef struct {
 
 typedef struct {
   float current_freq[2];
+  float held[2];
   h_graph_node_t *input;
   h_graph_node_t *target_freq;
   h_graph_node_t *bits;
@@ -147,8 +150,10 @@ typedef struct {
   float current_freq;
   float sample_rate;
   float *samples;
+  float held[2];
   size_t current_sample;
   size_t sample_count;
+  size_t channel_count;
   h_graph_node_t *length;
 } h_node_audio_t;
 #endif
@@ -207,8 +212,8 @@ typedef union {
 
 struct h_graph_node_s {
   char name[32];
-  float out[2];
-  size_t last_frame;
+  float out[2][BLOCK_SIZE];
+  size_t last_block;
   h_graph_node_type_t type;
   h_graph_node_data_t data;
 };
@@ -250,8 +255,7 @@ void h_hm_free(h_hm_t *hm);
 /* dsp */
 void h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx);
 void h_graph_preview(h_hm_t *g);
-void h_graph_render_block(h_hm_t *g, h_graph_node_t *out, h_context *ctx, float *buf, size_t buf_size);
-int h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t sample_count, size_t buf_size);
+int h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t block_count);
 void h_graph_free(h_hm_t *g);
 
 /* dsl */
