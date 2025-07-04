@@ -374,7 +374,7 @@ process_audio_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 void
 h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
 {
-  if (node->last_frame == ctx->current_frame) {
+  if (node->last_frame != ctx->current_frame) {
     return;
   }
 
@@ -421,7 +421,7 @@ h_graph_process_node(h_hm_t *g, h_graph_node_t *node, const h_context *ctx)
   #endif
   }
 
-  node->last_frame = ctx->current_frame;
+  node->last_frame++;
 }
 
 inline static void
