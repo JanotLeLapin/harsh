@@ -5,6 +5,7 @@
 #include <string.h>
 
 #define BLOCK_SIZE 128
+#define DSL_MAX_ARGS 16
 
 static const char *H_OP_MATH[] = { "+", "-", "*", "/", "pow", "log", "log2", "log10", "exp", 0 };
 static const char *H_OP_CMP[] = { "<", "<=", ">", ">=", "=", "!=", 0 };
@@ -218,6 +219,24 @@ struct h_graph_node_s {
   h_graph_node_data_t data;
 };
 
+/* dsl */
+typedef struct {
+  const char *src;
+  size_t src_len;
+  size_t i;
+} h_dsl_parser_ctx_t;
+
+typedef struct {
+  const char *p;
+  size_t len;
+} h_dsl_string_t;
+
+typedef struct {
+  h_dsl_string_t plain;
+  h_dsl_string_t name;
+  h_vec_t children;
+} h_dsl_node_t;
+
 /* util */
 int h_vec_init(h_vec_t *v, size_t initial_capacity, size_t elem_size);
 void *h_vec_push(h_vec_t *v, void *data);
@@ -259,6 +278,12 @@ int h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t
 void h_graph_free(h_hm_t *g);
 
 /* dsl */
+int h_dsl_parse(h_dsl_node_t *root, const char *src, size_t len);
+int h_dsl_compile(h_hm_t *g, h_dsl_node_t *root);
+int h_dsl_optimize(h_hm_t *g);
+
+void h_dsl_free_node(h_dsl_node_t *node);
+
 void h_dsl_load(h_hm_t *g, const char *src, size_t src_len);
 
 #endif

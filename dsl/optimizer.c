@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "../dsl.h"
+#include "../harsh.h"
 
 #define CHECK(n) (H_NODE_VALUE == n->type)
 

@@ -7,7 +7,6 @@
 #endif
 
 #include "../harsh.h"
-#include "../dsl.h"
 
 #define STR_EQN(expected, actual, length) ((!strncmp(expected, actual.p, length) && length == actual.len))
 #define STR_EQ(expected, actual) STR_EQN(expected, actual, sizeof(expected) - 1)
@@ -30,7 +29,7 @@ typedef struct {
   } type;
   union {
     struct {
-      arg_spec_t args[MAX_ARGS];
+      arg_spec_t args[DSL_MAX_ARGS];
       size_t count;
     };
     h_vec_t *target;
