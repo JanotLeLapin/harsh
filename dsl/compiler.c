@@ -44,7 +44,9 @@ graph_expr_from_ast_put(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count, h_dsl_c
   h_graph_node_t *gn;
 
   gn = graph_expr_from_ast(g, an, elem_count, ctx);
-  h_hm_put(g, gn->name, gn);
+  if (0 != gn) {
+    h_hm_put(g, gn->name, gn);
+  }
   return gn;
 }
 
@@ -234,6 +236,16 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count, h_dsl_ctx_t
     memcpy(gn.name, child->name.p, child->name.len);
     gn.name[child->name.len] = '\0';
     inserted = h_hm_get(g, gn.name);
+    if (0 == inserted) {
+      ctx->failed = 1;
+      if (ctx->error_count < 16) {
+        err = &ctx->errors[ctx->error_count++];
+        err->type = H_DSL_ERROR_SEVERE;
+        err->message = "unknown node referenced";
+        err->node = *an;
+        err->problem = *((h_dsl_node_t *) h_vec_get(&an->children, 0));
+      }
+    }
     return inserted;
   } else if (STR_EQ("ad", an->name)) {
     gn.type = H_NODE_ENVELOPE;
@@ -266,7 +278,9 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count, h_dsl_ctx_t
       h_vec_init(specs.target, 8, sizeof(h_graph_node_t **));
       for (i = 0; i < an->children.size; i++) {
         node = graph_expr_from_ast_put(g, h_vec_get(&an->children, i), elem_count, ctx);
-        h_vec_push(specs.target, &node);
+        if (0 != node) {
+          h_vec_push(specs.target, &node);
+        }
       }
       break;
     case ARG_SPECS_TYPED:

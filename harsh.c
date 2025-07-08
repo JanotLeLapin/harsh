@@ -113,17 +113,21 @@ main(int argc, char **argv)
   munmap(dsl_ctx.src, dsl_ctx.src_len);
   close(fd);
 
-  h_graph_preview(&graph);
+  if (dsl_ctx.failed) {
+    fprintf(stderr, "severe error encountered, could not compile graph\n");
+  } else {
+    h_graph_preview(&graph);
 
-  start = clock();
-  if (-1 == h_graph_render_wav32("out.wav", &graph, &ctx, 65536)) {
-    fprintf(stderr, "could not render graph\n");
+    start = clock();
+    if (-1 == h_graph_render_wav32("out.wav", &graph, &ctx, 65536)) {
+      fprintf(stderr, "could not render graph\n");
+    }
+    end = clock();
+
+    fprintf(stderr, "rendered %ld samples (%f sample rate, %f seconds), took %fs.\n", sample_count, ctx.sr, (float) sample_count / ctx.sr, (float) (end - start) / CLOCKS_PER_SEC);
   }
-  end = clock();
 
   h_graph_free(&graph);
-
-  fprintf(stderr, "rendered %ld samples (%f sample rate, %f seconds), took %fs.\n", sample_count, ctx.sr, (float) sample_count / ctx.sr, (float) (end - start) / CLOCKS_PER_SEC);
 
   return 0;
 }
