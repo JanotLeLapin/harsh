@@ -19,14 +19,23 @@ parse_node(h_dsl_node_t *node, h_dsl_parser_ctx_t *ctx)
   h_dsl_node_t *child;
 
   while (is_whitespace(ctx->src[ctx->i])) {
+    switch (ctx->src[ctx->i]) {
+    case '\n':
+      ctx->line++;
+    }
     ctx->i++;
   }
 
   node->plain.p = ctx->src + ctx->i;
 
   ctx->i++;
+  node->line = ctx->line;
   node->name.p = ctx->src + ctx->i;
   while (!is_whitespace(ctx->src[ctx->i])) {
+    switch (ctx->src[ctx->i]) {
+    case '\n':
+      ctx->line++;
+    }
     ctx->i++;
   }
   node->name.len = ctx->src + ctx->i - node->name.p;
@@ -35,6 +44,10 @@ parse_node(h_dsl_node_t *node, h_dsl_parser_ctx_t *ctx)
 
   for (;;) {
     while (is_whitespace(ctx->src[ctx->i])) {
+      switch (ctx->src[ctx->i]) {
+      case '\n':
+        ctx->line++;
+      }
       ctx->i++;
     }
 
@@ -51,9 +64,14 @@ parse_node(h_dsl_node_t *node, h_dsl_parser_ctx_t *ctx)
     }
 
     child = h_vec_push_empty(&node->children);
+    child->line = ctx->line;
     child->name.p = ctx->src + ctx->i;
     child->plain.p = child->name.p;
     while (!is_whitespace(ctx->src[ctx->i]) && ')' != ctx->src[ctx->i]) {
+      switch (ctx->src[ctx->i]) {
+      case '\n':
+        ctx->line++;
+      }
       ctx->i++;
     }
     child->name.len = ctx->src + ctx->i - child->name.p;
@@ -66,7 +84,7 @@ parse_node(h_dsl_node_t *node, h_dsl_parser_ctx_t *ctx)
 int
 h_dsl_parse(h_dsl_node_t *root, const char *src, size_t len)
 {
-  h_dsl_parser_ctx_t ctx = { .src = src, .src_len = len, .i = 0 };
+  h_dsl_parser_ctx_t ctx = { .src = src, .src_len = len, .i = 0, .line = 1 };
   parse_node(root, &ctx);
   return 0;
 }

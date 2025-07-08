@@ -225,6 +225,7 @@ typedef struct {
   const char *src;
   size_t src_len;
   size_t i;
+  size_t line;
 } h_dsl_parser_ctx_t;
 
 typedef struct {
@@ -233,6 +234,7 @@ typedef struct {
 } h_dsl_string_t;
 
 typedef struct {
+  size_t line;
   h_dsl_string_t plain;
   h_dsl_string_t name;
   h_vec_t children;
