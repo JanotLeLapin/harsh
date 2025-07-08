@@ -36,14 +36,14 @@ typedef struct {
   };
 } arg_specs_t;
 
-static h_graph_node_t *graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count);
+static h_graph_node_t *graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count, h_dsl_ctx_t *ctx);
 
 static inline h_graph_node_t *
-graph_expr_from_ast_put(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
+graph_expr_from_ast_put(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count, h_dsl_ctx_t *ctx)
 {
   h_graph_node_t *gn;
 
-  gn = graph_expr_from_ast(g, an, elem_count);
+  gn = graph_expr_from_ast(g, an, elem_count, ctx);
   h_hm_put(g, gn->name, gn);
   return gn;
 }
@@ -213,7 +213,7 @@ graph_literal(h_hm_t *g, float value, size_t *elem_count)
 }
 
 static h_graph_node_t *
-graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
+graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count, h_dsl_ctx_t *ctx)
 {
   h_graph_node_t gn, *inserted, *node, *n_zero, *n_one;
   h_dsl_node_t *child;
@@ -222,6 +222,7 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
   arg_specs_t specs;
   size_t i, j, current = 0;
   char found;
+  h_dsl_error_t *err;
 
   snprintf(gn.name, sizeof(gn.name), "_anon_%ld", (*elem_count)++);
   gn.last_block = 0;
@@ -242,10 +243,10 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
     n_one = graph_literal(g, 1.0, elem_count);
     h_vec_push(&gn.data.envelope.points, &n_zero);
     h_vec_push(&gn.data.envelope.points, &n_zero);
-    node = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count);
+    node = graph_expr_from_ast_put(g, h_vec_get(&an->children, 0), elem_count, ctx);
     h_vec_push(&gn.data.envelope.points, &node);
     h_vec_push(&gn.data.envelope.points, &n_one);
-    node = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count);
+    node = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count, ctx);
     h_vec_push(&gn.data.envelope.points, &node);
     h_vec_push(&gn.data.envelope.points, &n_zero);
   }
@@ -256,7 +257,7 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
     memcpy(tmp, child->plain.p, child->plain.len);
     tmp[child->plain.len - 1] = '\0';
     load_audio(&gn.data.audio, tmp + 1);
-    gn.data.audio.length = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count);
+    gn.data.audio.length = graph_expr_from_ast_put(g, h_vec_get(&an->children, 1), elem_count, ctx);
   }
   #endif
   else if (1 == arg_spec(&specs, an->name, &gn)) {
@@ -264,28 +265,34 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
     case ARG_SPECS_VARARG:
       h_vec_init(specs.target, 8, sizeof(h_graph_node_t **));
       for (i = 0; i < an->children.size; i++) {
-        node = graph_expr_from_ast_put(g, h_vec_get(&an->children, i),elem_count);
+        node = graph_expr_from_ast_put(g, h_vec_get(&an->children, i), elem_count, ctx);
         h_vec_push(specs.target, &node);
       }
       break;
     case ARG_SPECS_TYPED:
       for (i = 0; i < an->children.size; i++) {
-        found = 0;
-        for (j = 0; j < specs.count; j++) {
-          child = h_vec_get(&an->children, i);
-          if (!strncmp(specs.args[j].name, child->name.p, child->name.len) && specs.args[j].name[child->name.len] == '\0') {
-            child = h_vec_get(&an->children, ++i);
-            *specs.args[j].target = graph_expr_from_ast_put(g, child, elem_count);
-            found = 1;
-            break;
+        child = h_vec_get(&an->children, i);
+        if (':' == child->name.p[0]) {
+          found = 0;
+          for (j = 0; j < specs.count; j++) {
+            if (!strncmp(specs.args[j].name, child->name.p, child->name.len) && specs.args[j].name[child->name.len] == '\0') {
+              child = h_vec_get(&an->children, ++i);
+              *specs.args[j].target = graph_expr_from_ast_put(g, child, elem_count, ctx);
+              found = 1;
+              break;
+            }
           }
-        }
 
-        if (found) {
-          continue;
+          if (!found && ctx->error_count < DSL_MAX_ERRORS) {
+            err = &ctx->errors[ctx->error_count++];
+            err->type = H_DSL_ERROR_WARN;
+            err->node = *an;
+            err->problem = *child;
+            err->message = "unrecognized argument";
+          }
+        } else {
+          *specs.args[current++].target = graph_expr_from_ast_put(g, child, elem_count, ctx);
         }
-
-        *specs.args[current++].target = graph_expr_from_ast_put(g, child, elem_count);
       }
 
       for (i = 0; i < specs.count; i++) {
@@ -308,7 +315,6 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
       gn.out[0][i] = gn.out[0][0];
       gn.out[1][i] = gn.out[0][0];
     }
-    fprintf(stderr, "literal: %f\n", gn.out[0][0]);
   }
 
   inserted = malloc(sizeof(h_graph_node_t));
@@ -317,19 +323,19 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
 }
 
 static void
-graph_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count)
+graph_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count, h_dsl_ctx_t *ctx)
 {
   h_graph_node_t *gn;
   h_dsl_node_t *child;
 
   if (STR_EQ("def", an->name)) {
     child = h_vec_get(&an->children, 0);
-    gn = graph_expr_from_ast(g, h_vec_get(&an->children, 1), elem_count);
+    gn = graph_expr_from_ast(g, h_vec_get(&an->children, 1), elem_count, ctx);
     memcpy(gn->name, child->name.p, child->name.len);
     gn->name[child->name.len] = '\0';
     h_hm_put(g, gn->name, gn);
   } else {
-    graph_expr_from_ast_put(g, an, elem_count);
+    graph_expr_from_ast_put(g, an, elem_count, ctx);
   }
 }
 
@@ -338,14 +344,30 @@ h_dsl_load(h_hm_t *g, const char *src, size_t src_len)
 {
   h_dsl_node_t root;
   size_t elem_count = 0, i;
+  h_dsl_ctx_t ctx = { .src = src, .error_count = 0, .failed = 0 };
+  h_dsl_error_t *err;
+  char *label;
 
   h_hm_init(g, 16, 0.75f, h_hash_string, h_eq_string);
 
   h_dsl_parse(&root, src, src_len);
   for (i = 0; i < root.children.size; i++) {
-    graph_from_ast(g, h_vec_get(&root.children, i), &elem_count);
+    graph_from_ast(g, h_vec_get(&root.children, i), &elem_count, &ctx);
   }
   h_dsl_free_node(&root);
+
+  for (i = 0; i < ctx.error_count; i++) {
+    err = &ctx.errors[i];
+    switch (err->type) {
+    case H_DSL_ERROR_WARN:
+      label = "warn";
+      break;
+    case H_DSL_ERROR_SEVERE:
+      label = "severe";
+      break;
+    }
+    fprintf(stderr, "%s: %.*s: %s: '%.*s'\n", label, (int) err->node.plain.len, err->node.plain.p, err->message, (int) err->problem.plain.len, err->problem.plain.p);
+  }
 
   h_dsl_optimize(g);
 }

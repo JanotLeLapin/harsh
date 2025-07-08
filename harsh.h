@@ -6,6 +6,7 @@
 
 #define BLOCK_SIZE 128
 #define DSL_MAX_ARGS 16
+#define DSL_MAX_ERRORS 64
 
 static const char *H_OP_MATH[] = { "+", "-", "*", "/", "pow", "log", "log2", "log10", "exp", 0 };
 static const char *H_OP_CMP[] = { "<", "<=", ">", ">=", "=", "!=", 0 };
@@ -236,6 +237,23 @@ typedef struct {
   h_dsl_string_t name;
   h_vec_t children;
 } h_dsl_node_t;
+
+typedef struct {
+  enum {
+    H_DSL_ERROR_WARN,
+    H_DSL_ERROR_SEVERE,
+  } type;
+  h_dsl_node_t node;
+  h_dsl_node_t problem;
+  const char *message;
+} h_dsl_error_t;
+
+typedef struct {
+  const char *src;
+  h_dsl_error_t errors[DSL_MAX_ERRORS];
+  size_t error_count;
+  int failed;
+} h_dsl_ctx_t;
 
 /* util */
 int h_vec_init(h_vec_t *v, size_t initial_capacity, size_t elem_size);
