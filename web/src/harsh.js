@@ -11,8 +11,8 @@ const getString = (ptr) => {
 }
 
 const getNodePlain = (buf) => {
-  const pPtr = leNum(buf.slice(0, 4))
-  const len = leNum(buf.slice(4, 8))
+  const pPtr = leNum(buf.slice(4, 8))
+  const len = leNum(buf.slice(8, 12))
 
   const pBuf = new Uint8Array(window.Module.HEAPU8.buffer, pPtr, len)
   return new TextDecoder().decode(pBuf)
@@ -41,7 +41,7 @@ const getErrors = (ctx) => {
       const messagePtr = leNum(errors.slice(offset + 4 + nodeSize * 2, offset + 4 + nodeSize * 2 + 4))
       const message = getString(messagePtr)
 
-      return type + ': ' + node + ': ' + message + ': ' + problem
+      return leNum(errors.slice(offset + 4, offset + 8)) + ': ' + type + ': ' + node + ': ' + message + ': ' + problem
     })
 }
 
