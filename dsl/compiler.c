@@ -376,5 +376,7 @@ h_dsl_load(h_hm_t *g, h_dsl_ctx_t *ctx)
   }
   h_dsl_free_node(&root);
 
-  h_dsl_optimize(g);
+  if (!ctx->failed) {
+    h_dsl_optimize(g);
+  }
 }
