@@ -107,7 +107,7 @@ main(int argc, char **argv)
       label = "severe";
       break;
     }
-    fprintf(stderr, "%s: %.*s: %s: '%.*s'\n", label, (int) err->node.plain.len, err->node.plain.p, err->message, (int) err->problem.plain.len, err->problem.plain.p);
+    fprintf(stderr, "%s: %.*s: %s: '%.*s'\n", label, (int) err->node->plain.len, err->node->plain.p, err->message, (int) err->problem->plain.len, err->problem->plain.p);
   }
 
   munmap(dsl_ctx.src, dsl_ctx.src_len);

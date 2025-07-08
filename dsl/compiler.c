@@ -286,8 +286,8 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count, h_dsl_ctx_t
           if (!found && ctx->error_count < DSL_MAX_ERRORS) {
             err = &ctx->errors[ctx->error_count++];
             err->type = H_DSL_ERROR_WARN;
-            err->node = *an;
-            err->problem = *child;
+            err->node = an;
+            err->problem = child;
             err->message = "unrecognized argument";
           }
         } else {
