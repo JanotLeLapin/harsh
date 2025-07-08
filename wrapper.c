@@ -9,6 +9,10 @@
 
 EXPORT_SIZE(h_hm_t)
 EXPORT_SIZE(h_context)
+
+EXPORT_SIZE(h_dsl_string_t)
+EXPORT_SIZE(h_dsl_node_t)
+EXPORT_SIZE(h_dsl_error_t)
 EXPORT_SIZE(h_dsl_ctx_t)
 
 size_t

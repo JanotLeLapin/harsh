@@ -1,3 +1,52 @@
+const leNum = (buf) => buf.reduceRight((previous, current) => current | (previous << 8))
+
+const getString = (ptr) => {
+  const buf = new Uint8Array(window.Module.HEAPU8.buffer, ptr)
+  for (let i = 0; i < 65535; i++) {
+    if (buf[i] === 0) {
+      return new TextDecoder().decode(buf.slice(0, i))
+    }
+  }
+  return null
+}
+
+const getNodePlain = (ptr) => {
+  const buf = new Uint8Array(window.Module.HEAPU8.buffer, ptr, 8)
+  const pPtr = leNum(buf.slice(0, 4))
+  const len = leNum(buf.slice(4, 8))
+
+  const pBuf = new Uint8Array(window.Module.HEAPU8.buffer, pPtr, len)
+  return new TextDecoder().decode(pBuf)
+}
+
+const getErrors = (ctx) => {
+  const errorSize = window.Module.ccall('w_h_dsl_error_t_size', 'number')
+  const errors = new Uint8Array(window.Module.HEAPU8.buffer, ctx + 8, errorSize * 64)
+  const errorCount = leNum(new Uint8Array(window.Module.HEAPU8.buffer, ctx + 8 + errorSize * 64, 4))
+
+  return new Array(errorCount)
+    .fill(0)
+    .map((_, i) => i * errorSize)
+    .map((offset) => {
+      const type = {
+        0: 'warn',
+        1: 'error',
+      }[errors[offset]]
+
+      const [node, problem] = [
+        errors.slice(offset + 4, offset + 8),
+        errors.slice(offset + 8, offset + 12),
+      ]
+        .map(leNum)
+        .map(getNodePlain)
+
+      const messagePtr = leNum(errors.slice(offset + 12, offset + 16))
+      const message = getString(messagePtr)
+
+      return type + ': ' + node + ': ' + message + ': ' + problem
+    })
+}
+
 export class HarshGraph {
   /**
    * @param {number} graphPtr
@@ -34,6 +83,7 @@ export class HarshGraph {
     window.Module.ccall('w_dsl_ctx_init', null, ['number', 'number', 'number'], [dslCtx, srcPtr, srcEncoded.length])
 
     window.Module.ccall('h_dsl_load', null, ['number', 'number'], [graphPtr, dslCtx])
+    console.log(getErrors(dslCtx))
 
     window.Module._free(dslCtx)
     window.Module._free(srcPtr)
