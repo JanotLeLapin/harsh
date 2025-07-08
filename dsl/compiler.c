@@ -312,7 +312,14 @@ graph_expr_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count, h_dsl_ctx_t
       for (i = 0; i < specs.count; i++) {
         if (0 == *specs.args[i].target) {
           if (specs.args[i].required) {
-            fprintf(stderr, "missing required arg\n");
+            ctx->failed = 1;
+            if (ctx->error_count < DSL_MAX_ERRORS) {
+              err = &ctx->errors[ctx->error_count++];
+              err->type = H_DSL_ERROR_SEVERE;
+              err->node = *an;
+              err->problem = *an;
+              err->message = "missing required arg";
+            }
           } else {
             *specs.args[i].target = graph_literal(g, specs.args[i].def, elem_count);
           }
