@@ -59,9 +59,11 @@ main(int argc, char **argv)
 {
   h_hm_t graph;
   int fd;
-  size_t i, len, sample_count = 512 * 1000;
+  size_t i, sample_count = 512 * 1000;
   h_context ctx;
-  void *src;
+  h_dsl_ctx_t dsl_ctx;
+  h_dsl_error_t *err;
+  char *label;
   clock_t start, end;
 
   char *filename;
@@ -87,18 +89,34 @@ main(int argc, char **argv)
     perror("open");
     return -1;
   }
-  len = lseek(fd, 0, SEEK_END);
-  src = mmap(0, len, PROT_READ, MAP_PRIVATE, fd, 0);
 
-  h_dsl_load(&graph, src, len);
+  dsl_ctx.src_len = lseek(fd, 0, SEEK_END);
+  dsl_ctx.src = mmap(0, dsl_ctx.src_len, PROT_READ, MAP_PRIVATE, fd, 0);
+  dsl_ctx.error_count = 0;
+  dsl_ctx.failed = 0;
 
-  munmap(src, len);
+  h_dsl_load(&graph, &dsl_ctx);
+
+  for (i = 0; i < dsl_ctx.error_count; i++) {
+    err = &dsl_ctx.errors[i];
+    switch (err->type) {
+    case H_DSL_ERROR_WARN:
+      label = "warn";
+      break;
+    case H_DSL_ERROR_SEVERE:
+      label = "severe";
+      break;
+    }
+    fprintf(stderr, "%s: %.*s: %s: '%.*s'\n", label, (int) err->node.plain.len, err->node.plain.p, err->message, (int) err->problem.plain.len, err->problem.plain.p);
+  }
+
+  munmap(dsl_ctx.src, dsl_ctx.src_len);
   close(fd);
 
   h_graph_preview(&graph);
 
   start = clock();
-  if (-1 == h_graph_render_wav32("out.wav", &graph, &ctx, 4000)) {
+  if (-1 == h_graph_render_wav32("out.wav", &graph, &ctx, 65536)) {
     fprintf(stderr, "could not render graph\n");
   }
   end = clock();

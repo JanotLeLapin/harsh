@@ -24,7 +24,7 @@ $(TARGET): harsh.o $(OBJS)
 
 $(TARGET_WASM): $(OBJS_WASM)
 	$(EMCC) $^ -o $@ \
-		-s EXPORTED_FUNCTIONS='["_malloc","_free","_w_block_size","_w_h_hm_t_size","_w_h_context_size","_w_context_init","_w_graph_render_block","_h_dsl_load","_h_graph_free"]' \
+		-s EXPORTED_FUNCTIONS='["_malloc","_free","_w_block_size","_w_h_hm_t_size","_w_h_context_size","_w_h_dsl_ctx_t_size","_w_context_init","_w_dsl_ctx_init","_w_graph_render_block","_h_dsl_load","_h_graph_free"]' \
 		-s EXPORTED_RUNTIME_METHODS='["ccall","cwrap","HEAPU8","HEAPF32"]' \
 		$(LDFLAGS_WASM)
 

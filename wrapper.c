@@ -9,6 +9,7 @@
 
 EXPORT_SIZE(h_hm_t)
 EXPORT_SIZE(h_context)
+EXPORT_SIZE(h_dsl_ctx_t)
 
 size_t
 w_block_size()
@@ -21,6 +22,15 @@ w_context_init(h_context *ctx, float sr)
 {
   ctx->current_block = 0;
   ctx->sr = sr;
+}
+
+void
+w_dsl_ctx_init(h_dsl_ctx_t *ctx, char *src, size_t len)
+{
+  ctx->src = src;
+  ctx->src_len = len;
+  ctx->error_count = 0;
+  ctx->failed = 0;
 }
 
 void

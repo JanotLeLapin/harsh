@@ -340,34 +340,20 @@ graph_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count, h_dsl_ctx_t *ctx
 }
 
 void
-h_dsl_load(h_hm_t *g, const char *src, size_t src_len)
+h_dsl_load(h_hm_t *g, h_dsl_ctx_t *ctx)
 {
   h_dsl_node_t root;
   size_t elem_count = 0, i;
-  h_dsl_ctx_t ctx = { .src = src, .error_count = 0, .failed = 0 };
   h_dsl_error_t *err;
   char *label;
 
   h_hm_init(g, 16, 0.75f, h_hash_string, h_eq_string);
 
-  h_dsl_parse(&root, src, src_len);
+  h_dsl_parse(&root, ctx->src, ctx->src_len);
   for (i = 0; i < root.children.size; i++) {
-    graph_from_ast(g, h_vec_get(&root.children, i), &elem_count, &ctx);
+    graph_from_ast(g, h_vec_get(&root.children, i), &elem_count, ctx);
   }
   h_dsl_free_node(&root);
-
-  for (i = 0; i < ctx.error_count; i++) {
-    err = &ctx.errors[i];
-    switch (err->type) {
-    case H_DSL_ERROR_WARN:
-      label = "warn";
-      break;
-    case H_DSL_ERROR_SEVERE:
-      label = "severe";
-      break;
-    }
-    fprintf(stderr, "%s: %.*s: %s: '%.*s'\n", label, (int) err->node.plain.len, err->node.plain.p, err->message, (int) err->problem.plain.len, err->problem.plain.p);
-  }
 
   h_dsl_optimize(g);
 }

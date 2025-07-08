@@ -249,7 +249,8 @@ typedef struct {
 } h_dsl_error_t;
 
 typedef struct {
-  const char *src;
+  char *src;
+  size_t src_len;
   h_dsl_error_t errors[DSL_MAX_ERRORS];
   size_t error_count;
   int failed;
@@ -302,6 +303,6 @@ int h_dsl_optimize(h_hm_t *g);
 
 void h_dsl_free_node(h_dsl_node_t *node);
 
-void h_dsl_load(h_hm_t *g, const char *src, size_t src_len);
+void h_dsl_load(h_hm_t *g, h_dsl_ctx_t *ctx);
 
 #endif

@@ -5,16 +5,14 @@ export class HarshGraph {
    * @param {number} bufSize 
    * @param {number} ctxPtr
    * @param {number} outPtr
-   * @param {number} srcPtr
    * @param {(graph: number, out: number, ctx: number, size: number) => void} renderBlock 
    */
-  constructor(graphPtr, bufPtr, bufSize, ctxPtr, outPtr, srcPtr, renderBlock) {
+  constructor(graphPtr, bufPtr, bufSize, ctxPtr, outPtr, renderBlock) {
     this.graphPtr = graphPtr
     this.bufPtr = bufPtr
     this.bufSize = bufSize
     this.ctxPtr = ctxPtr
     this.outPtr = outPtr
-    this.srcPtr = srcPtr
     this.renderBlock = renderBlock
   }
 
@@ -31,7 +29,14 @@ export class HarshGraph {
     const srcPtr = window.Module._malloc(srcEncoded.length)
     window.Module.HEAPU8.set(srcEncoded, srcPtr)
 
-    window.Module.ccall('h_dsl_load', null, ['number', 'number', 'number'], [graphPtr, srcPtr, srcEncoded.length])
+    const dslCtxSize = window.Module.ccall('w_h_dsl_ctx_t_size', 'number')
+    const dslCtx = window.Module._malloc(dslCtxSize)
+    window.Module.ccall('w_dsl_ctx_init', null, ['number', 'number', 'number'], [dslCtx, srcPtr, srcEncoded.length])
+
+    window.Module.ccall('h_dsl_load', null, ['number', 'number'], [graphPtr, dslCtx])
+
+    window.Module._free(dslCtx)
+    window.Module._free(srcPtr)
 
     const outEncoded = new TextEncoder().encode('output\0')
     const outPtr = window.Module._malloc(outEncoded.length)
@@ -45,7 +50,7 @@ export class HarshGraph {
 
     const renderBlock = window.Module.cwrap('w_graph_render_block', null, ['number', 'number', 'number', 'number'])
 
-    return new HarshGraph(graphPtr, bufPtr, bufSize, ctxPtr, outPtr, srcPtr, renderBlock)
+    return new HarshGraph(graphPtr, bufPtr, bufSize, ctxPtr, outPtr, renderBlock)
   }
 
   /**
@@ -60,7 +65,6 @@ export class HarshGraph {
     window.Module._free(this.bufPtr)
     window.Module._free(this.ctxPtr)
     window.Module._free(this.outPtr)
-    window.Module._free(this.srcPtr)
     window.Module.ccall('h_graph_free', null, ['number'], [this.graphPtr])
   }
 }
