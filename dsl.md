@@ -15,7 +15,7 @@ Harsh's DSL uses a Scheme-like syntax, here's an example:
 
 This patch represents a sine wave (output) oscillating at a frequency of 523.25Hz (midi pitch 72).
 Its phase is modulated by another sine wave (mod), oscillating between a frequency of 523.25Hz ± 32Hz.
-The mod sine wave's frequency is modulated by yet another sine wave oscillating at 0.2Hz, this LFO's amplitude is multiplied by 34 and capped at ±32.
+The mod sine wave's frequency is modulated by yet another sine wave oscillating at 0.2Hz, scaled by 34 and hard clipped to ±32, creating frequency deviation of up to ±32Hz around the base frequency.
 
 We can rewrite the same patch without verbose named arguments:
 
