@@ -5,6 +5,7 @@ document.querySelector('#app').innerHTML = `
   <div>
     <h1>Harsh</h1>
     <div id="audio">
+      <code id="log"></code>
       <div id="editor"></div>
       <button>Generate</button>
       <canvas width="1024px" height="256px"></canvas>

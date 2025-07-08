@@ -69,6 +69,7 @@ export class HarshGraph {
    * @param {string} src 
    * @param {number} bufSize 
    * @param {number} sampleRate
+   * @returns {{ errors: string[], graph: HarshGraph }}
    */
   static create(src, bufSize, sampleRate) {
     const hmSize = window.Module.ccall('w_h_hm_t_size', 'number')
@@ -83,7 +84,7 @@ export class HarshGraph {
     window.Module.ccall('w_dsl_ctx_init', null, ['number', 'number', 'number'], [dslCtx, srcPtr, srcEncoded.length])
 
     window.Module.ccall('h_dsl_load', null, ['number', 'number'], [graphPtr, dslCtx])
-    console.log(getErrors(dslCtx))
+    const errors = getErrors(dslCtx)
 
     window.Module._free(dslCtx)
     window.Module._free(srcPtr)
@@ -100,7 +101,10 @@ export class HarshGraph {
 
     const renderBlock = window.Module.cwrap('w_graph_render_block', null, ['number', 'number', 'number', 'number'])
 
-    return new HarshGraph(graphPtr, bufPtr, bufSize, ctxPtr, outPtr, renderBlock)
+    return {
+      errors,
+      graph: new HarshGraph(graphPtr, bufPtr, bufSize, ctxPtr, outPtr, renderBlock),
+    }
   }
 
   /**

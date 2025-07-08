@@ -119,13 +119,26 @@ export function setupAudio(element) {
   }
 
   element.querySelector('button').addEventListener('click', () => {
+    const log = document.querySelector('#log')
+
     synth = editorView.state.doc.toString()
 
     if (graph) {
       graph.free()
     }
 
-    graph = HarshGraph.create(synth, BLOCK_SIZE, audioCtx.sampleRate)
+    const info = document.createElement('p')
+    info.textContent = 'compiling'
+    log.appendChild(info)
+
+    const res = HarshGraph.create(synth, BLOCK_SIZE, audioCtx.sampleRate)
+    graph = res.graph
+
+    for (let i = 0; i < res.errors.length; i++) {
+      const error = document.createElement('p')
+      error.textContent = res.errors[i]
+      log.appendChild(error)
+    }
 
     startAudio()
 
