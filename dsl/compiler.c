@@ -352,6 +352,9 @@ graph_from_ast(h_hm_t *g, h_dsl_node_t *an, size_t *elem_count, h_dsl_ctx_t *ctx
   if (STR_EQ("def", an->name)) {
     child = h_vec_get(&an->children, 0);
     gn = graph_expr_from_ast(g, h_vec_get(&an->children, 1), elem_count, ctx);
+    if (0 == gn) {
+      return;
+    }
     memcpy(gn->name, child->name.p, child->name.len);
     gn->name[child->name.len] = '\0';
     h_hm_put(g, gn->name, gn);
