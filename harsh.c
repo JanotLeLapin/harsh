@@ -10,6 +10,11 @@
 
 #include "harsh.h"
 
+#define COLOR_RESET "\x1b[0m"
+#define COLOR_INFO  "\x1b[35m"
+#define COLOR_WARN "\x1b[33m"
+#define COLOR_SEVERE "\x1b[31m"
+
 int
 h_graph_render_wav32(const char *filename, h_hm_t *g, h_context *ctx, size_t block_count)
 {
@@ -63,7 +68,7 @@ main(int argc, char **argv)
   h_context ctx;
   h_dsl_ctx_t dsl_ctx;
   h_dsl_error_t *err;
-  char *label;
+  char *label, *color;
   clock_t start, end;
 
   char *filename;
@@ -102,12 +107,14 @@ main(int argc, char **argv)
     switch (err->type) {
     case H_DSL_ERROR_WARN:
       label = "warn";
+      color = COLOR_WARN;
       break;
     case H_DSL_ERROR_SEVERE:
       label = "severe";
+      color = COLOR_SEVERE;
       break;
     }
-    fprintf(stderr, "line %ld: %s: %.*s: %s: '%.*s'\n", err->node.line, label, (int) err->node.plain.len, err->node.plain.p, err->message, (int) err->problem.plain.len, err->problem.plain.p);
+    fprintf(stderr, "line %ld: %s%s%s: %.*s: %s%s%s: '%.*s'\n", err->node.line, color, label, COLOR_RESET, (int) err->node.plain.len, err->node.plain.p, COLOR_INFO, err->message, COLOR_RESET, (int) err->problem.plain.len, err->problem.plain.p);
   }
 
   munmap(dsl_ctx.src, dsl_ctx.src_len);
