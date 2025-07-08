@@ -10,8 +10,7 @@ const getString = (ptr) => {
   return null
 }
 
-const getNodePlain = (ptr) => {
-  const buf = new Uint8Array(window.Module.HEAPU8.buffer, ptr, 8)
+const getNodePlain = (buf) => {
   const pPtr = leNum(buf.slice(0, 4))
   const len = leNum(buf.slice(4, 8))
 
@@ -21,6 +20,7 @@ const getNodePlain = (ptr) => {
 
 const getErrors = (ctx) => {
   const errorSize = window.Module.ccall('w_h_dsl_error_t_size', 'number')
+  const nodeSize = window.Module.ccall('w_h_dsl_node_t_size', 'number')
   const errors = new Uint8Array(window.Module.HEAPU8.buffer, ctx + 8, errorSize * 64)
   const errorCount = leNum(new Uint8Array(window.Module.HEAPU8.buffer, ctx + 8 + errorSize * 64, 4))
 
@@ -34,13 +34,11 @@ const getErrors = (ctx) => {
       }[errors[offset]]
 
       const [node, problem] = [
-        errors.slice(offset + 4, offset + 8),
-        errors.slice(offset + 8, offset + 12),
-      ]
-        .map(leNum)
-        .map(getNodePlain)
+        errors.slice(offset + 4, offset + nodeSize),
+        errors.slice(offset + nodeSize + 4, offset + nodeSize * 2),
+      ].map(getNodePlain)
 
-      const messagePtr = leNum(errors.slice(offset + 12, offset + 16))
+      const messagePtr = leNum(errors.slice(offset + 4 + nodeSize * 2, offset + 4 + nodeSize * 2 + 4))
       const message = getString(messagePtr)
 
       return type + ': ' + node + ': ' + message + ': ' + problem

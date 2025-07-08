@@ -243,8 +243,8 @@ typedef struct {
     H_DSL_ERROR_WARN = 0,
     H_DSL_ERROR_SEVERE,
   } type;
-  h_dsl_node_t *node;
-  h_dsl_node_t *problem;
+  h_dsl_node_t node;
+  h_dsl_node_t problem;
   const char *message;
 } h_dsl_error_t;
 
