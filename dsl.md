@@ -28,6 +28,16 @@ We can rewrite the same patch without verbose named arguments:
 
 Check out the examples directory for more examples.
 
+### Parameters
+
+Harsh's DSL supports flexible parameter passing - you can mix positional and named arguments in the same function call. Each parameter has a default position in the argument list, with the input signal (`:in`) always being the first parameter for signal processing functions:
+
+- `(sine 440.0 0.0)`: both frequency and phase as positional arguments
+- `(sine :freq 440.0 :phase 0.0)`: both as named arguments
+- `(sine 440.0 :phase 0.0)`: frequency positional, phase named
+- `(lowpass signal 650.0 :stages 2)`: input and cutoff positional, stages named
+- `(lowpass :in signal :cutoff 650.0 :stages 2)`: all as named arguments
+
 ## Expressions
 
 Harsh DSL expressions
