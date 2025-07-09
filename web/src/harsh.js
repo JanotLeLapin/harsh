@@ -107,10 +107,11 @@ export class HarshGraph {
 
   /**
    * @param {Float32Array} samples 
+   * @param {number} offset
    */
-  render(samples) {
+  render(samples, offset) {
     this.renderBlock(this.graphPtr, this.outPtr, this.ctxPtr, this.bufPtr)
-    samples.set(new Float32Array(window.Module.HEAPF32.buffer, this.bufPtr, this.bufSize * 2))
+    samples.set(new Float32Array(window.Module.HEAPF32.buffer, this.bufPtr, this.bufSize * 2), offset)
   }
 
   free() {

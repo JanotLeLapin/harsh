@@ -6,6 +6,7 @@ const CANVAS_WIDTH = 1024
 const CANVAS_HEIGHT = 256
 
 const BLOCK_SIZE = 128
+const CHUNK_SIZE = BLOCK_SIZE * 8
 
 export function setupAudio(element) {
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
@@ -50,7 +51,7 @@ export function setupAudio(element) {
 
   element.querySelector('#editor').appendChild(editorView.dom)
 
-  const samples = new Float32Array(BLOCK_SIZE * 2)
+  const samples = new Float32Array(CHUNK_SIZE)
 
   console.log('setting up audio')
 
@@ -78,7 +79,9 @@ export function setupAudio(element) {
   }
 
   function renderBlock() {
-    graph.render(samples)
+    for (let i = 0; i < 4; i++) {
+      graph.render(samples, i * BLOCK_SIZE * 2)
+    }
     sendAudioBlock(samples)
     drawSignal()
   }
